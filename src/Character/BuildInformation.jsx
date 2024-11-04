@@ -50,6 +50,22 @@ export const specializations = [
   "Oddball",
 ];
 
+export const powers = [
+  { name: "Killing Blow", bonus: { STR: 1 } },
+  { name: "Hammerspace", bonus: {} },
+  {
+    name: "Twinned Soul",
+    bonus: { STR: -1, VIT: -1, AGI: -1, MAG: -1, LCK: -1 },
+  },
+  { name: "Focused Assault", bonus: {} },
+  { name: "Barrage", bonus: {} },
+  { name: "Power of Friendship", bonus: {} },
+  { name: "Duplication", bonus: {} },
+  { name: "Third Eye", bonus: {} },
+  { name: "Regeneration", bonus: {} },
+  { name: "Tentacles", bonus: {} },
+];
+
 export const combatPerks = [
   { name: "Dual Weapon", bonus: { AGI: 1 } },
   { name: "Martial Training", bonus: { STR: 1 } },

@@ -1,4 +1,4 @@
-const roll11D20 = () => {
+const Roll11D20 = () => {
   const rolls = [];
   for (let i = 0; i < 11; i++) {
     rolls.push(Math.floor(Math.random() * 20));
@@ -6,4 +6,4 @@ const roll11D20 = () => {
   return rolls;
 };
 
-export default roll11D20;
+export default Roll11D20;

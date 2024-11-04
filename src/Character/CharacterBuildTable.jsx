@@ -32,6 +32,10 @@ const CharacterBuildTable = ({ build }) => (
         <td>{build.specialization}</td>
       </tr>
       <tr>
+        <td>Power</td>
+        <td>{build.power}</td>
+      </tr>
+      <tr>
         <td>Perks</td>
         <td>
           <PerksList perks={build.perks} />
