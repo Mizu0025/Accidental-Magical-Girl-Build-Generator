@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import CharacterBuildTable from "./Character/CharacterBuildTable";
 import GenerateButton from "./Character/GenerateButton";
 import { generateBuild } from "./BuildLogic";
-import * as css from "./App.css";
+import "./App.css";
 
 const App = () => {
   const [characterBuild, setCharacterBuild] = useState(null);
