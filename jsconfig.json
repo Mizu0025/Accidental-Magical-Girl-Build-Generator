@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "@Character/*": ["character/*"],
+      "@Dice/*": ["dice/*"],
+      "@Helpers/*": ["helpers/*"],
+      "@Dist/*": ["dist/*"]
+    }
+  },
+  "include": ["src"]
+}
