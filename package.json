@@ -2,7 +2,7 @@
   "name": "accidental-mahou",
   "version": "1.0.0",
   "description": "SPA which generates a build for the cyoa 'accidental magical girl'",
-  "main": "index.ts",
+  "main": "index.html",
   "scripts": {
     "test": "test",
     "build": "webpack",
