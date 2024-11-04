@@ -1,0 +1,25 @@
+{
+  "name": "accidental-mahou",
+  "version": "1.0.0",
+  "description": "SPA which generates a build for the cyoa 'accidental magical girl'",
+  "main": "index.ts",
+  "scripts": {
+    "test": "test",
+    "build": "webpack",
+    "start": "webpack serve --config webpack.config.js"
+  },
+  "author": "Mizu25",
+  "license": "ISC",
+  "dependencies": {
+    "eslint": "^8.57.1",
+    "prettier": "^3.3.3",
+    "prettier-eslint": "^16.3.0"
+  },
+  "devDependencies": {
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.6.3",
+    "webpack": "^5.96.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.1.0"
+  }
+}
