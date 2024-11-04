@@ -2,7 +2,7 @@
 import React from "react";
 import StatDisplay from "./StatDisplay";
 import PerksList from "./PerksList";
-import DiceRolls from "../Dice/DiceRolls";
+import DiceRolls from "@Dice/DiceRolls";
 
 const CharacterBuildTable = ({ build }) => (
   <table>
@@ -39,7 +39,7 @@ const CharacterBuildTable = ({ build }) => (
       </tr>
       <tr>
         <td>Artifacts</td>
-        <td>{build.artifact}</td>
+        <td>{build.ownedArtifacts}</td>
       </tr>
       <tr>
         <td>Stats</td>

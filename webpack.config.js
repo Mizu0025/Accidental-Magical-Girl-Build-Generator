@@ -8,9 +8,9 @@ module.exports = {
   },
   resolve: {
     alias: {
-      "@Character": path.resolve(__dirname, "src/character/"),
-      "@Dice": path.resolve(__dirname, "src/dice/"),
-      "@Helpers": path.resolve(__dirname, "src/helpers/"),
+      "@Character": path.resolve(__dirname, "src/Character/"),
+      "@Dice": path.resolve(__dirname, "src/Dice/"),
+      "@Helpers": path.resolve(__dirname, "src/Helpers/"),
       "@Dist": path.resolve(__dirname, "dist/"),
     },
     extensions: [".js", ".jsx", ".ts", ".tsx"], // Add .jsx and .tsx

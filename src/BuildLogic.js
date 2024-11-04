@@ -3,43 +3,45 @@ import {
   outfits,
   weapons,
   specializations,
-  artifacts,
 } from "@Character/BuildInformation";
 
 import roll11D20 from "@Dice/RollD20";
 import applyStatBonuses from "@Character/StatBonuses";
-import getBodyType from "@Helpers/GetBodyType";
-import getUniquePerk from "@Helpers/GetUniquePerk";
+import GetBodyType from "@Helpers/GetBodyType";
+import GetOwnedArtifacts from "@Helpers/GetOwnedArtifacts";
+import GetPerks from "@Helpers/GetPerks";
+import GetEquipment from "@Helpers/GetEquipment";
 
 export const generateBuild = () => {
   const stats = { STR: 4, AGI: 4, VIT: 4, MAG: 4, LCK: 4 };
   const diceRolls = roll11D20();
 
-  const origin = origins[Math.floor((diceRolls[0] - 1) / 5)];
+  const origin = origins[Math.floor(diceRolls[0] / 5)];
+
   const age = (diceRolls[1] > 10 ? diceRolls[1] - 10 : diceRolls[1]) + 6;
-  const bodyType = getBodyType(diceRolls[2]);
+
+  const bodyType = GetBodyType(diceRolls[2]);
   applyStatBonuses(stats, bodyType.bonus);
 
-  const outfit = outfits[Math.floor((diceRolls[3] - 1) / 5)];
+  const outfit = GetEquipment(diceRolls[3], true);
   applyStatBonuses(stats, outfit.bonus);
 
-  const weapon = weapons[Math.floor((diceRolls[4] - 1) / 5)];
+  const weapon = GetEquipment(diceRolls[4], false);
   applyStatBonuses(stats, weapon.bonus);
 
-  const specialization = specializations[diceRolls[5] - 1];
-  const perks = new Set();
-  const selectedPerks = [
-    getUniquePerk(diceRolls[6], perks, true),
-    getUniquePerk(diceRolls[7], perks, true),
-    getUniquePerk(diceRolls[8], perks, false),
-    getUniquePerk(diceRolls[9], perks, false),
-    getUniquePerk(diceRolls[10], perks, diceRolls[0] <= 10),
-  ];
+  const specialization = specializations[diceRolls[5]];
 
+  const perkDiceRolls = [
+    diceRolls[6],
+    diceRolls[7],
+    diceRolls[8],
+    diceRolls[9],
+    diceRolls[10],
+  ];
+  const selectedPerks = GetPerks(perkDiceRolls);
   selectedPerks.forEach((perk) => applyStatBonuses(stats, perk.bonus));
-  const artifact = artifacts.includes(selectedPerks.name)
-    ? selectedPerks.name
-    : "None";
+
+  const ownedArtifacts = GetOwnedArtifacts(selectedPerks);
 
   return {
     origin,
@@ -50,7 +52,7 @@ export const generateBuild = () => {
     specialization,
     stats,
     perks: selectedPerks.map((perk) => perk.name),
-    artifact,
+    ownedArtifacts,
     diceRolls,
   };
 };

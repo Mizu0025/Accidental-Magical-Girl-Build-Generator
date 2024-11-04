@@ -2,10 +2,9 @@
   "compilerOptions": {
     "baseUrl": "src",
     "paths": {
-      "@Character/*": ["character/*"],
-      "@Dice/*": ["dice/*"],
-      "@Helpers/*": ["helpers/*"],
-      "@Dist/*": ["dist/*"]
+      "@Character/*": ["Character/*"],
+      "@Dice/*": ["Dice/*"],
+      "@Helpers/*": ["Helpers/*"]
     }
   },
   "include": ["src"]
