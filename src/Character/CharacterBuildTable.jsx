@@ -8,13 +8,13 @@ const CharacterBuildTable = ({ build }) => {
     { label: "Origin", value: build.origin },
     { label: "Age", value: build.age, roll: build.diceRolls[0] },
     { label: "Body", value: build.body, roll: build.diceRolls[1] },
-    { label: "Outfit", value: build.outfit, roll: build.diceRolls[2] },
-    { label: "Weapon", value: build.weapon, roll: build.diceRolls[3] },
     {
       label: "Specialization",
       value: build.specialization,
-      roll: build.diceRolls[4],
+      roll: build.diceRolls[2],
     },
+    { label: "Weapon", value: build.weapon, roll: build.diceRolls[3] },
+    { label: "Outfit", value: build.outfit, roll: build.diceRolls[4] },
     { label: "Power", value: build.power, roll: build.diceRolls[5] },
     {
       label: "Perks",

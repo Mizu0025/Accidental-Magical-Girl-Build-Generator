@@ -15,15 +15,15 @@ export const body = [
 
 export const outfits = [
   { name: "Skimpy", bonus: { AGI: 1 } },
-  { name: "Armor", bonus: { STR: 1 } },
-  { name: "Fancy Dress", bonus: { MAG: 1 } },
+  { name: "Flowing", bonus: { STR: 1 } },
+  { name: "Elaborate", bonus: { MAG: 1 } },
   { name: "Uniform", bonus: { VIT: 1 } },
 ];
 
 export const weapons = [
-  { name: "Sword", bonus: { STR: 1 } },
-  { name: "Bow", bonus: { AGI: 1 } },
-  { name: "Staff", bonus: { MAG: 1 } },
+  { name: "Melee", bonus: { STR: 1, VIT: 1 } },
+  { name: "Ranged", bonus: { AGI: 1 } },
+  { name: "Mystic", bonus: { MAG: 1 } },
   { name: "Fists", bonus: { STR: 2 } },
 ];
 

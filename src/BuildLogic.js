@@ -22,11 +22,11 @@ export const generateBuild = () => {
 
   const specialization = specializations[diceRolls[2]];
 
-  const outfit = GetEquipment(diceRolls[3], true);
-  ApplyStatBonuses(stats, outfit.bonus);
-
-  const weapon = GetEquipment(diceRolls[4], false);
+  const weapon = GetEquipment(diceRolls[3], false);
   ApplyStatBonuses(stats, weapon.bonus);
+
+  const outfit = GetEquipment(diceRolls[4], true);
+  ApplyStatBonuses(stats, outfit.bonus);
 
   const power = GetPower(diceRolls[5]);
   ApplyStatBonuses(stats, power.bonus);
