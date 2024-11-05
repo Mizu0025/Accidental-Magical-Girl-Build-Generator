@@ -4,7 +4,8 @@
     "paths": {
       "@Character/*": ["Character/*"],
       "@Dice/*": ["Dice/*"],
-      "@Helpers/*": ["Helpers/*"]
+      "@Helpers/*": ["Helpers/*"],
+      "@Stats/*": ["Stats/*"]
     }
   },
   "include": ["src"]

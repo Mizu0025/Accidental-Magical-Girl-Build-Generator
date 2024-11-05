@@ -1,6 +1,6 @@
 // CharacterBuildTable.jsx
 import React from "react";
-import StatDisplay from "./StatDisplay";
+import StatDisplay from "@Stats/StatDisplay";
 import PerksList from "./PerksList";
 import DiceRolls from "@Dice/DiceRolls";
 

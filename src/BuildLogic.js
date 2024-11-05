@@ -1,7 +1,7 @@
 import { origins, specializations } from "@Character/BuildInformation";
 
 import Roll11D20 from "@Dice/RollD20";
-import ApplyStatBonuses from "@Character/StatBonuses";
+import ApplyStatBonuses from "@Stats/StatBonuses";
 import GetBodyType from "@Helpers/GetBodyType";
 import GetOwnedArtifacts from "@Helpers/GetOwnedArtifacts";
 import GetPerks from "@Helpers/GetPerks";

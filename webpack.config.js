@@ -11,7 +11,7 @@ module.exports = {
       "@Character": path.resolve(__dirname, "src/Character/"),
       "@Dice": path.resolve(__dirname, "src/Dice/"),
       "@Helpers": path.resolve(__dirname, "src/Helpers/"),
-      "@Dist": path.resolve(__dirname, "dist/"),
+      "@Stats": path.resolve(__dirname, "src/Stats/"),
     },
     extensions: [".js", ".jsx", ".ts", ".tsx"], // Add .jsx and .tsx
   },
