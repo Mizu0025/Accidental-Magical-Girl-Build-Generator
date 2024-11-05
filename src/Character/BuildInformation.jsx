@@ -1,10 +1,10 @@
 export const origins = [
-  "A Contract",
-  "Smug",
-  "A Weapon",
-  "An Emergency",
-  "An Artifact",
-  "A Death",
+  { name: "A Contract", bonus: {} },
+  { name: "Smug", bonus: { gold: -1, silver: -1, bronze: -1 } },
+  { name: "A Weapon", bonus: {} },
+  { name: "An Emergency", bonus: {} },
+  { name: "An Artifact", bonus: {} },
+  { name: "A Death", bonus: { silver: 1 } },
 ];
 
 export const body = [

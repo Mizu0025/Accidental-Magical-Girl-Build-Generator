@@ -3,12 +3,14 @@ table {
   width: 80%;
   max-width: 800px;
   border-collapse: collapse;
+  table-layout: fixed;
   margin-top: 20px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 td,
 th {
+  width: 150px;
   padding: 15px;
   border: 1px solid #ddd;
   font-size: 1rem;
@@ -17,22 +19,26 @@ th {
 
 /* Header styling */
 thead tr {
-  background-color: #f9f9f9; /* Matches the alternating row color */
+  background-color: #4a90e2; /* Matches the alternating row color */
 }
 
-th {
+thead th {
+  color: #f9f9f9;
+}
+
+tbody th {
   color: #4a90e2; /* Matches the blue color */
   font-weight: bold;
   font-size: 1.1rem;
 }
 
 /* Alternating row background color */
-tr:nth-child(odd) {
+tbody tr:nth-child(odd) {
   background-color: #f9f9f9;
 }
 
 /* Table header and row titles */
-td:first-child {
+tbody td:first-child {
   font-weight: bold;
   color: #4a90e2;
 }

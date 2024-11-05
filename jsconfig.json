@@ -5,7 +5,8 @@
       "@Character/*": ["Character/*"],
       "@Dice/*": ["Dice/*"],
       "@Helpers/*": ["Helpers/*"],
-      "@Stats/*": ["Stats/*"]
+      "@Stats/*": ["Stats/*"],
+      "@Currency/*": ["Currency/*"]
     }
   },
   "include": ["src"]

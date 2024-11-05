@@ -12,6 +12,7 @@ module.exports = {
       "@Dice": path.resolve(__dirname, "src/Dice/"),
       "@Helpers": path.resolve(__dirname, "src/Helpers/"),
       "@Stats": path.resolve(__dirname, "src/Stats/"),
+      "@Currency": path.resolve(__dirname, "src/Currency/"),
     },
     extensions: [".js", ".jsx", ".ts", ".tsx"], // Add .jsx and .tsx
   },
