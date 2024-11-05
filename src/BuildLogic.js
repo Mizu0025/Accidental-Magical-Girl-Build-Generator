@@ -14,8 +14,8 @@ export const generateBuild = () => {
 
   const origin = origins[Math.floor(Math.random() * origins.length)];
 
-  const age =
-    (diceRolls[0] > 10 ? diceRolls[0] + 1 - 10 : diceRolls[0] + 1) + 6;
+  const ageRoll = diceRolls[0] + 1;
+  const age = (ageRoll > 10 ? ageRoll - 10 : ageRoll) + 6;
 
   const bodyType = GetBodyType(diceRolls[1]);
   ApplyStatBonuses(stats, bodyType.bonus);
@@ -54,6 +54,6 @@ export const generateBuild = () => {
     stats,
     perks: selectedPerks.map((perk) => perk.name),
     ownedArtifacts,
-    diceRolls,
+    diceRolls: diceRolls.map((roll) => roll + 1),
   };
 };

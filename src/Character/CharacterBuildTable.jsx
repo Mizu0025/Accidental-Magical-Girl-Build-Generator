@@ -1,8 +1,6 @@
-// CharacterBuildTable.jsx
 import React from "react";
 import StatDisplay from "@Stats/StatDisplay";
 import PerksList from "./PerksList";
-import DiceRolls from "@Dice/DiceRolls";
 import "./CharacterBuildTable.css";
 
 const CharacterBuildTable = ({ build }) => {
@@ -34,7 +32,6 @@ const CharacterBuildTable = ({ build }) => {
       value: build.ownedArtifacts,
     },
     { label: "Stats", value: <StatDisplay stats={build.stats} /> },
-    // { label: "Dice Rolls", value: <DiceRolls rolls={build.diceRolls} /> },
   ];
 
   return (
