@@ -42,3 +42,34 @@ SPA application for generating a character build for the CYOA 'Accidental Magica
 - Initial React project setup using `create-react-app`.
 - Redux and React-Redux installed.
 - Architecture planning and directory structure definition are ongoing.
+
+## Next Steps
+1. **Define Project Structure and Architecture**
+   - Finalize the directory structure.
+   - Define component hierarchy.
+2. **Implement User Interface Components**
+   - Create basic components for character customization.
+   - Implement responsive design using CSS or a library like Bootstrap.
+3. **Create Redux Store and Actions**
+   - Set up the Redux store.
+   - Define actions for character attribute changes.
+4. **Write Unit Tests Using Jest**
+   - Write tests for components.
+   - Write tests for Redux actions and reducers.
+5. **Implement CYOA Game Mechanics**
+   - Implement the logic for rolling 11d20.
+   - Assign roll results to character choices based on data in `data.js`.
+6. **Integrate with data.js and coin-spend.txt**
+   - Load and parse data from `data.js`.
+   - Implement coin spend logic as defined in `coin-spend.txt`.
+7. **Test and Debug Application**
+   - Conduct thorough testing.
+   - Debug any issues found during testing.
+8. **Deploy to Production**
+   - Choose a hosting platform (e.g., Vercel, Netlify).
+   - Deploy the application.
+
+# Additional Notes
+- Ensure that all components are well-documented.
+- Keep the codebase clean and maintainable.
+- Regularly commit changes with descriptive messages.
