@@ -11,6 +11,15 @@ export interface BuildState {
         power: number;
         perks: [number, number, number, number, number];
     };
+    originalRolls: {
+        age: number;
+        body: number;
+        specialization: number;
+        weapon: number;
+        outfit: number;
+        power: number;
+        perks: [number, number, number, number, number];
+    };
     choices: {
         bodyOption?: number; // Index of chosen option (0 or 1)
         specializationMods?: Record<number, keyof Stats>; // For choice mods
@@ -32,16 +41,19 @@ export interface BuildState {
 }
 
 export function createEmptyBuild(): BuildState {
+    const emptyRolls = {
+        age: 0,
+        body: 0,
+        specialization: 0,
+        weapon: 0,
+        outfit: 0,
+        power: 0,
+        perks: [0, 0, 0, 0, 0] as [number, number, number, number, number],
+    };
+
     return {
-        rolls: {
-            age: 0,
-            body: 0,
-            specialization: 0,
-            weapon: 0,
-            outfit: 0,
-            power: 0,
-            perks: [0, 0, 0, 0, 0],
-        },
+        rolls: { ...emptyRolls },
+        originalRolls: { ...emptyRolls },
         choices: {
             perkCategories: ['T2', 'T2', 'T1', 'T1', 'T1'],
         },

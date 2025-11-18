@@ -31,13 +31,18 @@ function App() {
     const newBuild = createEmptyBuild();
 
     // Roll all 11d20
-    newBuild.rolls.age = rollD20();
-    newBuild.rolls.body = rollD20();
-    newBuild.rolls.specialization = rollD20();
-    newBuild.rolls.weapon = rollD20();
-    newBuild.rolls.outfit = rollD20();
-    newBuild.rolls.power = rollD20();
-    newBuild.rolls.perks = [rollD20(), rollD20(), rollD20(), rollD20(), rollD20()];
+    const rolls = {
+      age: rollD20(),
+      body: rollD20(),
+      specialization: rollD20(),
+      weapon: rollD20(),
+      outfit: rollD20(),
+      power: rollD20(),
+      perks: [rollD20(), rollD20(), rollD20(), rollD20(), rollD20()] as [number, number, number, number, number],
+    };
+
+    newBuild.rolls = rolls;
+    newBuild.originalRolls = { ...rolls }; // Store original rolls
 
     // Set default choices
     newBuild.choices.bodyOption = 0; // Default to first option
@@ -58,8 +63,57 @@ function App() {
     }
   };
 
+  const handleUndoCoinSpend = (category: string) => {
+    // Find what coin was spent on this category
+    const spentCoin = (build.coinsSpent as any)[category] as CoinType | undefined;
+    if (!spentCoin) return;
+
+    // Refund the coin
+    setCoins({
+      ...coins,
+      [spentCoin]: coins[spentCoin] + 1,
+    });
+
+    // Clear the coin spend from build and restore original roll
+    const newCoinsSpent = { ...build.coinsSpent };
+    delete (newCoinsSpent as any)[category];
+
+    // Restore original roll value
+    const newRolls = { ...build.rolls };
+    if (category === 'age') newRolls.age = build.originalRolls.age;
+    else if (category === 'body') newRolls.body = build.originalRolls.body;
+    else if (category === 'specialization') newRolls.specialization = build.originalRolls.specialization;
+    else if (category === 'weapon') newRolls.weapon = build.originalRolls.weapon;
+    else if (category === 'outfit') newRolls.outfit = build.originalRolls.outfit;
+    else if (category === 'power') newRolls.power = build.originalRolls.power;
+    else if (category.startsWith('perk')) {
+      const perkIndex = parseInt(category.replace('perk', ''));
+      newRolls.perks = [...build.rolls.perks] as [number, number, number, number, number];
+      newRolls.perks[perkIndex] = build.originalRolls.perks[perkIndex];
+    }
+
+    setBuild({
+      ...build,
+      rolls: newRolls,
+      coinsSpent: newCoinsSpent,
+    });
+  };
+
+  const handleResetAllCoins = () => {
+    // Refund all spent coins
+    const refundedCoins = { ...getInitialCoins(selectedOrigin) };
+    setCoins(refundedCoins);
+
+    // Clear all coin spends
+    setBuild({
+      ...build,
+      coinsSpent: {},
+    });
+  };
+
   const handleReroll = () => {
     setBuild(createEmptyBuild());
+    setCoins(getInitialCoins(selectedOrigin)); // Reset coins on reroll
     setHasRolled(false);
   };
 
@@ -138,6 +192,8 @@ function App() {
                       coins={coins}
                       onUpdateBuild={handleUpdateBuild}
                       onSpendCoin={handleSpendCoin}
+                      onUndoCoinSpend={handleUndoCoinSpend}
+                      onResetAllCoins={handleResetAllCoins}
                     />
                   </div>
 

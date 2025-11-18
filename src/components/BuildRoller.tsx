@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { RollSection } from './RollSection';
+import { ChoiceModal } from './ChoiceModal';
 import type { BuildState } from '../utils/buildState';
 import type { Origin } from '../data/gameData';
 import type { CoinStash, CoinType } from '../utils/mechanics';
@@ -11,6 +13,17 @@ import {
     getPowerName,
     getPerkName,
 } from '../utils/buildCalculator';
+import {
+    getAgeCoinEffects,
+    getBodyCoinEffects,
+    getSpecializationCoinEffects,
+    getWeaponCoinEffects,
+    getOutfitCoinEffects,
+    getPowerCoinEffects,
+    getPerkCoinEffects,
+    canSpendCoin,
+    type CoinEffect,
+} from '../utils/coinEffects';
 import { bodyMap, specializationMap, powerMap } from '../data/gameData';
 import { getRangeKey } from '../utils/mechanics';
 import './BuildRoller.css';
@@ -21,6 +34,8 @@ interface BuildRollerProps {
     coins: CoinStash;
     onUpdateBuild: (build: BuildState) => void;
     onSpendCoin: (type: CoinType) => void;
+    onUndoCoinSpend: (category: string) => void;
+    onResetAllCoins: () => void;
 }
 
 export function BuildRoller({
@@ -29,7 +44,14 @@ export function BuildRoller({
     coins,
     onUpdateBuild,
     onSpendCoin,
+    onUndoCoinSpend,
+    onResetAllCoins,
 }: BuildRollerProps) {
+    const [pendingChoice, setPendingChoice] = useState<{
+        effect: CoinEffect;
+        category: string;
+    } | null>(null);
+
     const age = calculateAge(build.rolls.age);
 
     // Body choices
@@ -77,13 +99,53 @@ export function BuildRoller({
         });
     };
 
+    const handleCoinSpend = (category: string, effect: CoinEffect) => {
+        if (!canSpendCoin(category, effect.type, build, coins)) return;
+
+        // If this effect needs a choice, show the modal
+        if (effect.needsChoice && effect.choicePrompt) {
+            setPendingChoice({ effect, category });
+        } else {
+            // Apply immediately without choice
+            const newBuild = effect.apply(build);
+            if (newBuild) {
+                onUpdateBuild(newBuild);
+                onSpendCoin(effect.type);
+            }
+        }
+    };
+
+    const handleChoiceConfirm = (choiceValue: string | number) => {
+        if (!pendingChoice) return;
+
+        const newBuild = pendingChoice.effect.apply(build, choiceValue);
+        if (newBuild) {
+            onUpdateBuild(newBuild);
+            onSpendCoin(pendingChoice.effect.type);
+        }
+        setPendingChoice(null);
+    };
+
+    const handleChoiceCancel = () => {
+        setPendingChoice(null);
+    };
+
     return (
         <div className="build-roller">
             <div className="build-roller-header">
-                <h3>Character Build</h3>
-                <p className="text-muted">
-                    Your character has been rolled! Expand each section to see details and make choices.
-                </p>
+                <div>
+                    <h3>Character Build</h3>
+                    <p className="text-muted">
+                        Your character has been rolled! Expand each section to see details and make choices.
+                    </p>
+                </div>
+                <button
+                    className="btn-secondary btn-small"
+                    onClick={onResetAllCoins}
+                    style={{ alignSelf: 'flex-start' }}
+                >
+                    Reset All Coins
+                </button>
             </div>
 
             <div className="roll-sections">
@@ -94,6 +156,14 @@ export function BuildRoller({
                     result={`${age} years old`}
                     description="Your character's starting age as a magical girl."
                     freePick={checkFreePick(origin, 'age')}
+                    spentCoin={build.coinsSpent.age}
+                    onUndo={() => onUndoCoinSpend('age')}
+                    coinOptions={getAgeCoinEffects(build).map((effect) => ({
+                        type: effect.type,
+                        available: canSpendCoin('age', effect.type, build, coins),
+                        effect: effect.description,
+                        onSpend: () => handleCoinSpend('age', effect),
+                    }))}
                 />
 
                 {/* Body */}
@@ -103,6 +173,8 @@ export function BuildRoller({
                     result={getBodyType(build.rolls.body)}
                     description="Your character's physical build."
                     freePick={checkFreePick(origin, 'body')}
+                    spentCoin={build.coinsSpent.body}
+                    onUndo={() => onUndoCoinSpend('body')}
                     choices={
                         bodyData
                             ? bodyData.options.map((option, index) => ({
@@ -113,6 +185,12 @@ export function BuildRoller({
                             }))
                             : undefined
                     }
+                    coinOptions={getBodyCoinEffects(build).map((effect) => ({
+                        type: effect.type,
+                        available: canSpendCoin('body', effect.type, build, coins),
+                        effect: effect.description,
+                        onSpend: () => handleCoinSpend('body', effect),
+                    }))}
                 />
 
                 {/* Specialization */}
@@ -126,6 +204,8 @@ export function BuildRoller({
                             : undefined
                     }
                     freePick={checkFreePick(origin, 'specialization')}
+                    spentCoin={build.coinsSpent.specialization}
+                    onUndo={() => onUndoCoinSpend('specialization')}
                     choices={
                         hasSpecChoices && specData
                             ? specData.mods
@@ -152,6 +232,12 @@ export function BuildRoller({
                                 }>
                             : undefined
                     }
+                    coinOptions={getSpecializationCoinEffects(build).map((effect) => ({
+                        type: effect.type,
+                        available: canSpendCoin('specialization', effect.type, build, coins),
+                        effect: effect.description,
+                        onSpend: () => handleCoinSpend('specialization', effect),
+                    }))}
                 />
 
                 {/* Weapon */}
@@ -161,6 +247,14 @@ export function BuildRoller({
                     result={getWeaponName(build.rolls.weapon)}
                     description="Your magical girl weapon type."
                     freePick={checkFreePick(origin, 'weapon')}
+                    spentCoin={build.coinsSpent.weapon}
+                    onUndo={() => onUndoCoinSpend('weapon')}
+                    coinOptions={getWeaponCoinEffects(build).map((effect) => ({
+                        type: effect.type,
+                        available: canSpendCoin('weapon', effect.type, build, coins),
+                        effect: effect.description,
+                        onSpend: () => handleCoinSpend('weapon', effect),
+                    }))}
                 />
 
                 {/* Outfit */}
@@ -170,6 +264,14 @@ export function BuildRoller({
                     result={getOutfitName(build.rolls.outfit)}
                     description="Your magical girl transformation outfit style."
                     freePick={checkFreePick(origin, 'outfit')}
+                    spentCoin={build.coinsSpent.outfit}
+                    onUndo={() => onUndoCoinSpend('outfit')}
+                    coinOptions={getOutfitCoinEffects(build).map((effect) => ({
+                        type: effect.type,
+                        available: canSpendCoin('outfit', effect.type, build, coins),
+                        effect: effect.description,
+                        onSpend: () => handleCoinSpend('outfit', effect),
+                    }))}
                 />
 
                 {/* Power */}
@@ -179,6 +281,8 @@ export function BuildRoller({
                     result={getPowerName(build.rolls.power)}
                     description={powerData?.effect}
                     freePick={checkFreePick(origin, 'power')}
+                    spentCoin={build.coinsSpent.power}
+                    onUndo={() => onUndoCoinSpend('power')}
                     choices={
                         powerData?.isChoice && powerData.choice
                             ? powerData.choice.map((choice, index) => ({
@@ -189,6 +293,12 @@ export function BuildRoller({
                             }))
                             : undefined
                     }
+                    coinOptions={getPowerCoinEffects(build).map((effect) => ({
+                        type: effect.type,
+                        available: canSpendCoin('power', effect.type, build, coins),
+                        effect: effect.description,
+                        onSpend: () => handleCoinSpend('power', effect),
+                    }))}
                 />
 
                 {/* Perks */}
@@ -200,9 +310,27 @@ export function BuildRoller({
                         result={getPerkName(roll, build.choices.perkCategories[index])}
                         description={`Category: ${build.choices.perkCategories[index] === 'T1' ? 'Combat' : 'Support'}`}
                         freePick={checkFreePick(origin, `perk${index + 1}`)}
+                        spentCoin={build.coinsSpent.perks?.[index] || undefined}
+                        onUndo={() => onUndoCoinSpend(`perk${index}`)}
+                        coinOptions={getPerkCoinEffects(build, index).map((effect) => ({
+                            type: effect.type,
+                            available: canSpendCoin(`perk${index}`, effect.type, build, coins),
+                            effect: effect.description,
+                            onSpend: () => handleCoinSpend(`perk${index}`, effect),
+                        }))}
                     />
                 ))}
             </div>
+
+            {pendingChoice && pendingChoice.effect.choicePrompt && (
+                <ChoiceModal
+                    title={pendingChoice.effect.choicePrompt.title}
+                    description={pendingChoice.effect.choicePrompt.description}
+                    options={pendingChoice.effect.choicePrompt.options}
+                    onSelect={handleChoiceConfirm}
+                    onCancel={handleChoiceCancel}
+                />
+            )}
         </div>
     );
 }

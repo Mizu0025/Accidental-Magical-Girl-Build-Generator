@@ -21,6 +21,8 @@ interface RollSectionProps {
     }>;
     freePick?: boolean;
     isExpanded?: boolean;
+    spentCoin?: CoinType;
+    onUndo?: () => void;
 }
 
 export function RollSection({
@@ -32,6 +34,8 @@ export function RollSection({
     choices,
     freePick,
     isExpanded = false,
+    spentCoin,
+    onUndo,
 }: RollSectionProps) {
     const [expanded, setExpanded] = useState(isExpanded);
 
@@ -41,8 +45,28 @@ export function RollSection({
                 <div className="roll-section-title">
                     <h4>{title}</h4>
                     {freePick && <span className="free-pick-badge">Free Pick</span>}
+                    {spentCoin && (
+                        <span className="spent-coin-badge">
+                            {spentCoin === 'Bronze' && '🥉'}
+                            {spentCoin === 'Silver' && '🥈'}
+                            {spentCoin === 'Gold' && '🥇'}
+                            {' '}Spent
+                        </span>
+                    )}
                 </div>
                 <div className="roll-section-summary">
+                    {spentCoin && onUndo && (
+                        <button
+                            className="undo-button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onUndo();
+                            }}
+                            title="Undo coin spend"
+                        >
+                            ↶ Undo
+                        </button>
+                    )}
                     <span className="roll-value">Roll: {roll}</span>
                     <span className="roll-arrow">{expanded ? '▼' : '▶'}</span>
                 </div>

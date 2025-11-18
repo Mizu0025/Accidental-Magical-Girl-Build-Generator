@@ -3,7 +3,11 @@
 }
 
 .build-roller-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     margin-bottom: var(--spacing-xl);
+    gap: var(--spacing-lg);
 }
 
 .build-roller-header h3 {
