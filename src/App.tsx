@@ -1,18 +1,26 @@
 import { useState } from 'react';
 import { OriginSelector } from './components/OriginSelector';
 import { StatsPanel } from './components/StatsPanel';
+import { BuildRoller } from './components/BuildRoller';
 import { initialStats } from './data/gameData';
-import { getInitialCoins, rollD20, calculateAge } from './utils/mechanics';
+import { getInitialCoins, rollD20, spendCoin } from './utils/mechanics';
+import { createEmptyBuild } from './utils/buildState';
+import { calculateFinalStats } from './utils/buildCalculator';
 import type { Origin, Stats } from './data/gameData';
-import type { CoinStash } from './utils/mechanics';
+import type { CoinStash, CoinType } from './utils/mechanics';
+import type { BuildState } from './utils/buildState';
 import './App.css';
 
 function App() {
   const [selectedOrigin, setSelectedOrigin] = useState<Origin | null>(null);
   const [coins, setCoins] = useState<CoinStash>({ Bronze: 4, Silver: 3, Gold: 1 });
-  const [stats, setStats] = useState<Stats>(initialStats);
-  const [age, setAge] = useState<number>(7);
+  const [build, setBuild] = useState<BuildState>(createEmptyBuild());
   const [hasRolled, setHasRolled] = useState(false);
+
+  const stats: Stats = hasRolled ? calculateFinalStats(build, selectedOrigin) : initialStats;
+  const age = hasRolled && build.rolls.age > 0
+    ? (build.rolls.age > 10 ? build.rolls.age - 10 : build.rolls.age) + 6
+    : 7;
 
   const handleOriginSelect = (origin: Origin) => {
     setSelectedOrigin(origin);
@@ -20,15 +28,39 @@ function App() {
   };
 
   const handleRollAll = () => {
-    // Roll for age
-    const ageRoll = rollD20();
-    const calculatedAge = calculateAge(ageRoll);
-    setAge(calculatedAge);
+    const newBuild = createEmptyBuild();
 
-    // For now, just set initial stats
-    // TODO: Implement full rolling logic
-    setStats(initialStats);
+    // Roll all 11d20
+    newBuild.rolls.age = rollD20();
+    newBuild.rolls.body = rollD20();
+    newBuild.rolls.specialization = rollD20();
+    newBuild.rolls.weapon = rollD20();
+    newBuild.rolls.outfit = rollD20();
+    newBuild.rolls.power = rollD20();
+    newBuild.rolls.perks = [rollD20(), rollD20(), rollD20(), rollD20(), rollD20()];
+
+    // Set default choices
+    newBuild.choices.bodyOption = 0; // Default to first option
+    newBuild.choices.perkCategories = ['T2', 'T2', 'T1', 'T1', 'T1']; // Default perk categories
+
+    setBuild(newBuild);
     setHasRolled(true);
+  };
+
+  const handleUpdateBuild = (updatedBuild: BuildState) => {
+    setBuild(updatedBuild);
+  };
+
+  const handleSpendCoin = (type: CoinType) => {
+    const newCoins = spendCoin(coins, type);
+    if (newCoins) {
+      setCoins(newCoins);
+    }
+  };
+
+  const handleReroll = () => {
+    setBuild(createEmptyBuild());
+    setHasRolled(false);
   };
 
   return (
@@ -52,12 +84,21 @@ function App() {
                   <h3 className="card-title">Origin: {selectedOrigin.name}</h3>
                   <button
                     className="btn-secondary btn-small"
-                    onClick={() => setSelectedOrigin(null)}
+                    onClick={() => {
+                      setSelectedOrigin(null);
+                      setHasRolled(false);
+                      setBuild(createEmptyBuild());
+                    }}
                   >
                     Change Origin
                   </button>
                 </div>
                 <p className="text-muted">{selectedOrigin.bonus}</p>
+                {selectedOrigin.negative !== 'None' && (
+                  <p className="text-muted" style={{ color: '#ef4444' }}>
+                    ⚠️ {selectedOrigin.negative}
+                  </p>
+                )}
               </div>
 
               <div className="card mt-lg">
@@ -80,23 +121,34 @@ function App() {
                 </div>
               </div>
 
-              {!hasRolled && (
+              {!hasRolled ? (
                 <button
                   className="btn-primary mt-lg"
-                  style={{ width: '100%', padding: '1rem' }}
+                  style={{ width: '100%', padding: '1rem', fontSize: '1.125rem' }}
                   onClick={handleRollAll}
                 >
-                  🎲 Roll Character
+                  🎲 Roll Character (11d20)
                 </button>
-              )}
+              ) : (
+                <>
+                  <div className="card mt-lg">
+                    <BuildRoller
+                      build={build}
+                      origin={selectedOrigin}
+                      coins={coins}
+                      onUpdateBuild={handleUpdateBuild}
+                      onSpendCoin={handleSpendCoin}
+                    />
+                  </div>
 
-              {hasRolled && (
-                <div className="card mt-lg">
-                  <h3>Character Build</h3>
-                  <p className="text-muted">
-                    Full build generator coming soon! Age: {age}
-                  </p>
-                </div>
+                  <button
+                    className="btn-secondary mt-lg"
+                    style={{ width: '100%', padding: '1rem' }}
+                    onClick={handleReroll}
+                  >
+                    🔄 Reroll Character
+                  </button>
+                </>
               )}
             </div>
 
