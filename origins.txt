@@ -1,0 +1,30 @@
+{
+    Name: Contract
+    Bonus: free pick on uniform and perk 5, ignoring roll results
+    Negative: None
+},
+{
+    Name: Smug
+    Bonus: free pick for every choice
+    Negative: only get 2 silver and 3 bronze coins
+},
+{
+    Name: Weapon
+    Bonus: free pick for weapon, additional +1 to one of the weapon stats
+    Negative: None
+},
+{
+    Name: Emergency
+    Bonus: free pick on two non-artifact combat perks, can shift perk rolls to combat perk group for free
+    Negative: None 
+},
+{
+    Name: Artifact
+    Bonus: replace any perk roll with an artifact
+    Negative: None
+},
+{
+    Name: Death
+    Bonus: extra silver coin
+    Negative: None
+}
