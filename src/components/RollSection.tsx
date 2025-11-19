@@ -4,7 +4,7 @@ import './RollSection.css';
 
 interface RollSectionProps {
     title: string;
-    roll: number;
+    roll?: number;
     result: string;
     description?: string;
     coinOptions?: Array<{
@@ -23,6 +23,7 @@ interface RollSectionProps {
     isExpanded?: boolean;
     spentCoin?: CoinType;
     onUndo?: () => void;
+    children?: React.ReactNode;
 }
 
 export function RollSection({
@@ -36,6 +37,7 @@ export function RollSection({
     isExpanded = false,
     spentCoin,
     onUndo,
+    children,
 }: RollSectionProps) {
     const [expanded, setExpanded] = useState(isExpanded);
 
@@ -67,7 +69,7 @@ export function RollSection({
                             ↶ Undo
                         </button>
                     )}
-                    <span className="roll-value">Roll: {roll}</span>
+                    {roll !== undefined && <span className="roll-value">Roll: {roll}</span>}
                     <span className="roll-arrow">{expanded ? '▼' : '▶'}</span>
                 </div>
             </div>
@@ -78,6 +80,7 @@ export function RollSection({
                         <div className="result-label">Result</div>
                         <div className="result-value">{result}</div>
                         {description && <p className="result-description">{description}</p>}
+                        {children}
                     </div>
 
                     {choices && choices.length > 0 && (

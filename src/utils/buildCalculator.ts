@@ -15,8 +15,9 @@ export function calculateFinalStats(build: BuildState, origin: Origin | null): S
     let stats = { ...initialStats };
 
     // Apply body stats
-    if (build.rolls.body > 0) {
-        const bodyKey = getRangeKey(build.rolls.body, Object.keys(bodyMap));
+    const bodyRoll = build.choices.freePickBody ?? build.rolls.body;
+    if (bodyRoll > 0) {
+        const bodyKey = getRangeKey(bodyRoll, Object.keys(bodyMap));
         if (bodyKey) {
             const body = bodyMap[bodyKey];
             const chosenOption = build.choices.bodyOption ?? 0;
@@ -27,8 +28,9 @@ export function calculateFinalStats(build: BuildState, origin: Origin | null): S
     }
 
     // Apply specialization stats
-    if (build.rolls.specialization > 0) {
-        const spec = specializationMap[build.rolls.specialization];
+    const specRoll = build.choices.freePickSpecialization ?? build.rolls.specialization;
+    if (specRoll > 0) {
+        const spec = specializationMap[specRoll];
         if (spec) {
             spec.mods.forEach((mod, index) => {
                 if (mod.stat === 'Choice' && build.choices.specializationMods?.[index]) {
@@ -41,8 +43,9 @@ export function calculateFinalStats(build: BuildState, origin: Origin | null): S
     }
 
     // Apply weapon stats
-    if (build.rolls.weapon > 0) {
-        const weaponKey = getRangeKey(build.rolls.weapon, Object.keys(weaponMap));
+    const weaponRoll = build.choices.freePickWeapon ?? build.rolls.weapon;
+    if (weaponRoll > 0) {
+        const weaponKey = getRangeKey(weaponRoll, Object.keys(weaponMap));
         if (weaponKey) {
             const weapon = weaponMap[weaponKey];
             weapon.mods.forEach((mod) => {
@@ -52,8 +55,9 @@ export function calculateFinalStats(build: BuildState, origin: Origin | null): S
     }
 
     // Apply outfit stats
-    if (build.rolls.outfit > 0) {
-        const outfitKey = getRangeKey(build.rolls.outfit, Object.keys(outfitMap));
+    const outfitRoll = build.choices.freePickOutfit ?? build.rolls.outfit;
+    if (outfitRoll > 0) {
+        const outfitKey = getRangeKey(outfitRoll, Object.keys(outfitMap));
         if (outfitKey) {
             const outfit = outfitMap[outfitKey];
             outfit.mods.forEach((mod) => {
@@ -63,8 +67,9 @@ export function calculateFinalStats(build: BuildState, origin: Origin | null): S
     }
 
     // Apply power stats
-    if (build.rolls.power > 0) {
-        const powerKey = getRangeKey(build.rolls.power, Object.keys(powerMap));
+    const powerRoll = build.choices.freePickPower ?? build.rolls.power;
+    if (powerRoll > 0) {
+        const powerKey = getRangeKey(powerRoll, Object.keys(powerMap));
         if (powerKey) {
             const power = powerMap[powerKey];
 
@@ -87,19 +92,74 @@ export function calculateFinalStats(build: BuildState, origin: Origin | null): S
 
     // Apply perk stats
     build.rolls.perks.forEach((roll, index) => {
-        if (roll > 0) {
+        const perkRoll = build.choices.freePickPerks?.[index] ?? roll;
+        if (perkRoll > 0) {
             const category = build.choices.perkCategories[index];
-            const perk = perkData[category][roll as keyof typeof perkData.T1];
+            const perk = perkData[category][perkRoll as keyof typeof perkData.T1];
             if (perk && 'statMod' in perk && perk.statMod) {
                 stats = applyStatMod(stats, perk.statMod);
             }
         }
     });
 
+    // Apply second weapon stats (Gold coin)
+    if (build.choices.secondWeapon) {
+        const weaponKey = getRangeKey(build.choices.secondWeapon, Object.keys(weaponMap));
+        if (weaponKey) {
+            const weapon = weaponMap[weaponKey];
+            weapon.mods.forEach((mod) => {
+                stats = applyStatMod(stats, mod);
+            });
+        }
+    }
+
+    // Apply second power stats (Gold coin)
+    if (build.choices.secondPower) {
+        const powerKey = getRangeKey(build.choices.secondPower, Object.keys(powerMap));
+        if (powerKey) {
+            const power = powerMap[powerKey];
+
+            // Handle Twinned Soul penalty
+            if (power.penalty) {
+                Object.keys(stats).forEach((key) => {
+                    stats[key as keyof Stats] += power.penalty!;
+                });
+            }
+
+            // Handle Killing Blow choice
+            if (power.isChoice && power.choice && build.choices.secondPowerChoice !== undefined) {
+                const chosenMod = power.choice[build.choices.secondPowerChoice];
+                if (chosenMod) {
+                    stats = applyStatMod(stats, chosenMod);
+                }
+            }
+        }
+    }
+
+    // Apply bonus perk stats (Gold coin)
+    if (build.choices.bonusPerks) {
+        build.choices.bonusPerks.forEach((bonusPerk) => {
+            const perk = perkData[bonusPerk.category][bonusPerk.roll as keyof typeof perkData.T1];
+            if (perk && 'statMod' in perk && perk.statMod) {
+                stats = applyStatMod(stats, perk.statMod);
+            }
+        });
+    }
+
     // Apply Weapon origin bonus (+1 to weapon stat)
     if (origin?.name === 'Weapon' && build.rolls.weapon > 0) {
         // This would need additional logic to determine which weapon stat to boost
         // For now, we'll skip this as it requires user choice
+    }
+
+    // Apply stat spends
+    if (build.choices.statSpends) {
+        Object.entries(build.choices.statSpends).forEach(([stat, spends]) => {
+            const bonus = spends.bronze * 1 + spends.silver * 2 + spends.gold * 4;
+            if (stat in stats) {
+                stats[stat as keyof Stats] += bonus;
+            }
+        });
     }
 
     return stats;

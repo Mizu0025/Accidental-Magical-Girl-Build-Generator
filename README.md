@@ -1,73 +1,61 @@
-# React + TypeScript + Vite
+# Accidental Magical Girl Build Generator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based interactive build generator for the "Accidental Magical Girl" CYOA (Choose Your Own Adventure). This application allows users to roll for character stats, abilities, and equipment, and then modify their build using a coin-based system.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🎲 Character Generation
+- **Automated Rolling**: Rolls 11d20 to generate your character's Age, Body Type, Specialization, Weapon, Outfit, Power, and 5 Perks.
+- **Visual Feedback**: Displays rolls and their corresponding results clearly.
+- **Stats Calculation**: Automatically calculates STR, AGI, VIT, MAG, and LCK based on your rolls and choices.
 
-## React Compiler
+### 🪙 Coin System
+Modify your build using the Bronze, Silver, and Gold coin mechanics:
+- **Bronze Coins**: Small adjustments (e.g., +/- 1 to Age, reroll specific sections).
+- **Silver Coins**: Moderate changes (e.g., choose specific Age, choose Body Type, choose Weapon category).
+- **Gold Coins**: Major upgrades (e.g., Second Weapon, Second Power, Bonus Perks).
+- **Stat Boosts**: Spend coins directly to increase stats (Bronze +1, Silver +2, Gold +4).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### ✨ Origin System
+Select from various Origins, each with unique bonuses and negatives:
+- **Contract**: Free picks on Uniform and Perk 5.
+- **Smug**: Free picks for every choice (but fewer coins).
+- **Weapon**: Free pick for Weapon + stat bonus.
+- **Emergency**: Free picks on combat perks.
+- **Artifact**: Replace perk with artifact.
+- **Death**: Extra Silver coin.
 
-## Expanding the ESLint configuration
+### 🛠️ Advanced Mechanics
+- **Free Pick System**: Origins like "Smug" or "Contract" allow you to bypass rolls and choose any option for specific categories.
+- **Granular Undo**: Undo individual coin spends, including specific stat boosts, without resetting your entire build.
+- **Smart Choices**: Context-aware modals for complex choices (e.g., selecting a specific stat for the "Oddball" specialization).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech Stack
+- **Frontend**: React, TypeScript, Vite
+- **Styling**: CSS Modules / Vanilla CSS
+- **State Management**: React Hooks
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Setup & Running
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1.  **Install Dependencies**:
+    ```bash
+    npm install
+    ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+2.  **Run Development Server**:
+    ```bash
+    npm run dev
+    ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+3.  **Build for Production**:
+    ```bash
+    npm run build
+    ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Project Structure
+- `src/components`: React components (BuildRoller, RollSection, etc.)
+- `src/utils`: Helper functions for mechanics, state management, and calculations.
+- `src/data`: Static game data (tables for Weapons, Powers, Perks, etc.).
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## License
+This project is a fan-made tool for the Accidental Magical Girl CYOA.

@@ -28,6 +28,24 @@ export interface BuildState {
         powerChoice?: number; // For Killing Blow choice
         perkCategories: ['T2', 'T2', 'T1', 'T1', 'T1' | 'T2']; // Can be modified
         perkPicks?: Array<number | null>; // Perk roll or free pick
+        // Free pick selections (origin bonuses)
+        freePickAge?: number; // Free pick age roll value
+        freePickBody?: number; // Free pick body roll value
+        freePickSpecialization?: number; // Free pick specialization roll value
+        freePickWeapon?: number; // Free pick weapon roll value
+        freePickOutfit?: number; // Free pick outfit roll value
+        freePickPower?: number; // Free pick power roll value
+        freePickPerks?: Array<number | null>; // Free pick perk roll values [perk1, perk2, perk3, perk4, perk5]
+        // Gold coin features
+        secondWeapon?: number; // Roll value for second weapon (1-20)
+        secondPower?: number; // Roll value for second power (1-20)
+        secondPowerChoice?: number; // For Killing Blow choice on second power
+        bonusPerks?: Array<{
+            category: 'T1' | 'T2';
+            roll: number;
+        }>; // Bonus perks from Gold coins (can have multiple from different perk slots)
+        // Stat Spends
+        statSpends?: Record<string, { bronze: number; silver: number; gold: number }>;
     };
     coinsSpent: {
         age?: 'Bronze' | 'Silver' | 'Gold';
@@ -56,6 +74,13 @@ export function createEmptyBuild(): BuildState {
         originalRolls: { ...emptyRolls },
         choices: {
             perkCategories: ['T2', 'T2', 'T1', 'T1', 'T1'],
+            statSpends: {
+                STR: { bronze: 0, silver: 0, gold: 0 },
+                AGI: { bronze: 0, silver: 0, gold: 0 },
+                VIT: { bronze: 0, silver: 0, gold: 0 },
+                MAG: { bronze: 0, silver: 0, gold: 0 },
+                LCK: { bronze: 0, silver: 0, gold: 0 },
+            },
         },
         coinsSpent: {},
     };

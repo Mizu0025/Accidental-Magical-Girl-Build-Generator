@@ -63,9 +63,21 @@ function App() {
     }
   };
 
+  const handleRefundCoin = (type: CoinType) => {
+    setCoins({ ...coins, [type]: coins[type] + 1 });
+  };
+
   const handleUndoCoinSpend = (category: string) => {
     // Find what coin was spent on this category
-    const spentCoin = (build.coinsSpent as any)[category] as CoinType | undefined;
+    let spentCoin: CoinType | undefined;
+
+    if (category.startsWith('perk')) {
+      const perkIndex = parseInt(category.replace('perk', ''));
+      spentCoin = build.coinsSpent.perks?.[perkIndex] || undefined;
+    } else {
+      spentCoin = (build.coinsSpent as any)[category] as CoinType | undefined;
+    }
+
     if (!spentCoin) return;
 
     // Refund the coin
@@ -76,25 +88,70 @@ function App() {
 
     // Clear the coin spend from build and restore original roll
     const newCoinsSpent = { ...build.coinsSpent };
-    delete (newCoinsSpent as any)[category];
 
-    // Restore original roll value
+    // Restore original roll value and choices
     const newRolls = { ...build.rolls };
-    if (category === 'age') newRolls.age = build.originalRolls.age;
-    else if (category === 'body') newRolls.body = build.originalRolls.body;
-    else if (category === 'specialization') newRolls.specialization = build.originalRolls.specialization;
-    else if (category === 'weapon') newRolls.weapon = build.originalRolls.weapon;
-    else if (category === 'outfit') newRolls.outfit = build.originalRolls.outfit;
-    else if (category === 'power') newRolls.power = build.originalRolls.power;
-    else if (category.startsWith('perk')) {
+    const newChoices = { ...build.choices };
+
+    if (category === 'age') {
+      newRolls.age = build.originalRolls.age;
+      delete (newCoinsSpent as any)[category];
+    } else if (category === 'body') {
+      newRolls.body = build.originalRolls.body;
+      delete (newCoinsSpent as any)[category];
+    } else if (category === 'specialization') {
+      newRolls.specialization = build.originalRolls.specialization;
+      delete (newCoinsSpent as any)[category];
+    } else if (category === 'weapon') {
+      newRolls.weapon = build.originalRolls.weapon;
+      // Clear second weapon if Gold coin was spent
+      if (spentCoin === 'Gold') {
+        newChoices.secondWeapon = undefined;
+      }
+      delete (newCoinsSpent as any)[category];
+    } else if (category === 'outfit') {
+      newRolls.outfit = build.originalRolls.outfit;
+      delete (newCoinsSpent as any)[category];
+    } else if (category === 'power') {
+      newRolls.power = build.originalRolls.power;
+      // Clear second power if Gold coin was spent
+      if (spentCoin === 'Gold') {
+        newChoices.secondPower = undefined;
+        newChoices.secondPowerChoice = undefined;
+      }
+      delete (newCoinsSpent as any)[category];
+    } else if (category.startsWith('perk')) {
       const perkIndex = parseInt(category.replace('perk', ''));
+
+      // Restore original roll
       newRolls.perks = [...build.rolls.perks] as [number, number, number, number, number];
       newRolls.perks[perkIndex] = build.originalRolls.perks[perkIndex];
+
+      // Restore original perk category if it was a Bronze coin (category swap)
+      if (spentCoin === 'Bronze') {
+        const newCategories = [...build.choices.perkCategories];
+        // Flip back to original category
+        newCategories[perkIndex] = newCategories[perkIndex] === 'T1' ? 'T2' : 'T1';
+        newChoices.perkCategories = newCategories as any;
+      }
+
+      // Remove bonus perks if Gold coin was spent
+      if (spentCoin === 'Gold' && newChoices.bonusPerks) {
+        // Remove the last 2 bonus perks (the ones added by this Gold coin)
+        newChoices.bonusPerks = newChoices.bonusPerks.slice(0, -2);
+      }
+
+      // Clear the coin spend
+      if (newCoinsSpent.perks) {
+        newCoinsSpent.perks = [...newCoinsSpent.perks];
+        newCoinsSpent.perks[perkIndex] = null;
+      }
     }
 
     setBuild({
       ...build,
       rolls: newRolls,
+      choices: newChoices,
       coinsSpent: newCoinsSpent,
     });
   };
@@ -104,9 +161,20 @@ function App() {
     const refundedCoins = { ...getInitialCoins(selectedOrigin) };
     setCoins(refundedCoins);
 
-    // Clear all coin spends
+    // Restore all original rolls and clear coin-affected choices
     setBuild({
       ...build,
+      rolls: { ...build.originalRolls },
+      choices: {
+        ...build.choices,
+        // Reset perk categories to default
+        perkCategories: ['T2', 'T2', 'T1', 'T1', 'T1'],
+        // Clear Gold coin features
+        secondWeapon: undefined,
+        secondPower: undefined,
+        secondPowerChoice: undefined,
+        bonusPerks: undefined,
+      },
       coinsSpent: {},
     });
   };
@@ -192,6 +260,7 @@ function App() {
                       coins={coins}
                       onUpdateBuild={handleUpdateBuild}
                       onSpendCoin={handleSpendCoin}
+                      onRefundCoin={handleRefundCoin}
                       onUndoCoinSpend={handleUndoCoinSpend}
                       onResetAllCoins={handleResetAllCoins}
                     />

@@ -115,13 +115,18 @@ export function checkFreePick(origin: Origin | null, category: string): boolean 
     // Smug: free pick for every choice
     if (origin.name === 'Smug') return true;
 
-    // Contract: free pick on uniform and perk 5
+    // Contract: free pick on outfit and perk5
     if (origin.name === 'Contract' && (category === 'outfit' || category === 'perk5')) {
         return true;
     }
 
     // Weapon: free pick for weapon
     if (origin.name === 'Weapon' && category === 'weapon') {
+        return true;
+    }
+
+    // Emergency: free pick on perk1 and perk2 (two non-artifact combat perks)
+    if (origin.name === 'Emergency' && (category === 'perk1' || category === 'perk2')) {
         return true;
     }
 

@@ -1,3 +1,7 @@
+Statistics:
+- bronze +1 to stat
+- silver +2 to stat
+- gold +4 to stat
 Age:
 - bronze adds/subtracts 1 yr
 - silver change to any age between 7-16
