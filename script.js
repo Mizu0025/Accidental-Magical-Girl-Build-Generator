@@ -58,48 +58,48 @@ document.addEventListener('DOMContentLoaded', () => {
         ],
         perks: {
             combat: [
-                { roll: 1, name: "Dual Weapon", bonus: "+1 Weapon Stat" },
-                { roll: 2, name: "Martial Training †", bonus: "+1 STR" },
-                { roll: 3, name: "Enhanced Weapon", bonus: "+1 Weapon Stat" },
-                { roll: 4, name: "Mystic Artifact", bonus: "" },
-                { roll: 5, name: "Gifted †", bonus: "+1 Spec Stat" },
-                { roll: 6, name: "Flexibility †", bonus: "+1 AGI" },
-                { roll: 7, name: "Enhanced Transformation", bonus: "" },
-                { roll: 8, name: "Disguise Artifact", bonus: "" },
-                { roll: 9, name: "Blood Magic", bonus: "+1 VIT" },
-                { roll: 10, name: "Hammerspace Handbag", bonus: "" },
-                { roll: 11, name: "Enhanced Sustenance †", bonus: "+1 VIT" },
-                { roll: 12, name: "Enhanced Outfit", bonus: "+1 Outfit Stat" },
-                { roll: 13, name: "Healing Artifact", bonus: "" },
-                { roll: 14, name: "Ally", bonus: "+1 Any" },
-                { roll: 15, name: "Monstrous Metamorphosis", bonus: "" },
-                { roll: 16, name: "Sorcery †", bonus: "+1 MAG" },
-                { roll: 17, name: "Wings", bonus: "" },
-                { roll: 18, name: "Purification Artifact", bonus: "" },
-                { roll: 19, name: "Awareness", bonus: "" },
-                { roll: 20, name: "Power Artifact", bonus: "" }
+                { roll: 1, name: "Dual Weapon", description: 'Your weapon gains an additional type', bonus: "+1 Weapon Stat" },
+                { roll: 2, name: "Martial Training †", description: 'Gain training in tactics, logistics and the intricacies of a large number of weapons.', bonus: "+1 STR" },
+                { roll: 3, name: "Enhanced Weapon", description: 'Your weapon hits harder, is sharper or casts faster.', bonus: "+1 Weapon Stat" },
+                { roll: 4, name: "Mystic Artifact", description: 'You gain an artifact which can sometimes show past/present/future scenes relevant to your query.', bonus: "" },
+                { roll: 5, name: "Gifted †", description: 'You are naturally talented in your specialisation in a way other magical girls cannot replicate.', bonus: "+1 Spec Stat" },
+                { roll: 6, name: "Flexibility †", description: 'You are far more flexible than should be possible.', bonus: "+1 AGI" },
+                { roll: 7, name: "Enhanced Transformation", description: 'You can transform in just 3 seconds.', bonus: "" },
+                { roll: 8, name: "Disguise Artifact", description: 'You gain an artifact which lets you transform into others temporarily, including their clothes and equipment.', bonus: "" },
+                { roll: 9, name: "Blood Magic", description: "You can fuel spells with vitality, not just mana", bonus: "+1 VIT" },
+                { roll: 10, name: "Hammerspace Handbag", description: "Can store objects in a extradimensional space the size of a handbag", bonus: "" },
+                { roll: 11, name: "Enhanced Sustenance †", description: "You need only 4 hours sleep, have no nutritional requirements and no longer need to breathe", bonus: "+1 VIT" },
+                { roll: 12, name: "Enhanced Outfit", description: "Outfit is much tougher and channels magic better.", bonus: "+1 Outfit Stat" },
+                { roll: 13, name: "Healing Artifact", description: "You gain a handheld artifact powered by your mana which can heal almost any wound; it's slow and inefficient", bonus: "" },
+                { roll: 14, name: "Ally", description: "Encounter a fellow magical girl/monstergirl who decides to fight by your side.", bonus: "+1 Any" },
+                { roll: 15, name: "Monstrous Metamorphosis", description: "When sufficiently angry or upset, You can transform into a monstrous form which is much tougher and channels magic better. Lose rational thought til you've escaped/defeated the threat.", bonus: "" },
+                { roll: 16, name: "Sorcery †", description: "Learn a style of magic even regular folk can use (runecarving, ofuda, divination, etc).", bonus: "+1 MAG" },
+                { roll: 17, name: "Wings", description: "Your outfit has wings, allowing gliding and (with effort) flight.", bonus: "" },
+                { roll: 18, name: "Purification Artifact", description: "You gain an artifact which repels monsters from an area surrounding it.", bonus: "" },
+                { roll: 19, name: "Awareness", description: "You're much more aware of anything your mundane senses can detect.", bonus: "" },
+                { roll: 20, name: "Power Artifact", description: "You gain an artifact which can be used to channel a single ability from another specialisation.", bonus: "" }
             ],
             support: [
-                { roll: 1, name: "Interdimensional Tourist", bonus: "" },
-                { roll: 2, name: "Closure †", bonus: "+1 LCK" },
-                { roll: 3, name: "Fated †", bonus: "+1 LCK" },
-                { roll: 4, name: "Training", bonus: "" },
-                { roll: 5, name: "Interdimensional Home", bonus: "" },
-                { roll: 6, name: "Incognito", bonus: "" },
-                { roll: 7, name: "Environmental Sealing", bonus: "" },
-                { roll: 8, name: "Get out of Jail", bonus: "" },
-                { roll: 9, name: "Big Damn Hero", bonus: "" },
-                { roll: 10, name: "Absolute Direction", bonus: "" },
-                { roll: 11, name: "Big Backpack", bonus: "" },
-                { roll: 12, name: "Natural Aging", bonus: "" },
-                { roll: 13, name: "Masculinity †", bonus: "+1 LCK" },
-                { roll: 14, name: "Overcity Shift", bonus: "" },
-                { roll: 15, name: "Money", bonus: "" },
-                { roll: 16, name: "Familiar", bonus: "" },
-                { roll: 17, name: "Soul Jar", bonus: "" },
-                { roll: 18, name: "Eternal Style", bonus: "" },
-                { roll: 19, name: "A Way Out †", bonus: "+1 LCK" },
-                { roll: 20, name: "Fake Parents", bonus: "" }
+                { roll: 1, name: "Interdimensional Tourist", description: "Encounter an interdimensional traveler who helps you out.", bonus: "" },
+                { roll: 2, name: "Closure †", description: "Your family believe you died some time ago, with your possessions redistributed accordingly.", bonus: "+1 LCK" },
+                { roll: 3, name: "Fated †", description: "You're fated for some task, and until it's complete you find events conspiring to help you out.", bonus: "+1 LCK" },
+                { roll: 4, name: "Training", description: "Complete mastery of a single subject, martial art, trade skill or philosophy known by 21st century humanity.", bonus: "" },
+                { roll: 5, name: "Interdimensional Home", description: "You gain access to a pocket dimension apartment", bonus: "" },
+                { roll: 6, name: "Incognito", description: "People often overlook you or forget your identity.", bonus: "" },
+                { roll: 7, name: "Environmental Sealing", description: "Immune to environmental hazards of pressure and temperature, generate air in a thin layer around your body. Shared to anyone touching you.", bonus: "" },
+                { roll: 8, name: "Get out of Jail", description: "Can teleport to a random safe location if imprisoned or trapped", bonus: "" },
+                { roll: 9, name: "Big Damn Hero", description: "Can give someone/a location a token then instinctively know when danger approaches.", bonus: "" },
+                { roll: 10, name: "Absolute Direction", description: "Always know which direction to travel in order to reach a destination or object.", bonus: "" },
+                { roll: 11, name: "Big Backpack", description: "Big backpack full of useful items (food, identification documents, clothes, local currency).", bonus: "" },
+                { roll: 12, name: "Natural Aging", description: "You can age naturally.", bonus: "" },
+                { roll: 13, name: "Masculinity †", description: "Your gender is male.", bonus: "+1 LCK" },
+                { roll: 14, name: "Overcity Shift", description: "Can shift yourself and a small area surrounding you into/out of the Overcity", bonus: "" },
+                { roll: 15, name: "Money", description: "Gain a small amount of local currency each month, equiv. to a low income job (eg; 3000 USD)", bonus: "" },
+                { roll: 16, name: "Familiar", description: "You have a small animal companion with knowledge about magic and monsters. Can transform into a human form temporarily, needing rest afterwards.", bonus: "" },
+                { roll: 17, name: "Soul Jar", description: "Your body is a puppet controlled by your soul, now residing in a small breakable container; if destroyed you instantly die.", bonus: "" },
+                { roll: 18, name: "Eternal Style", description: "Body and clothing always kept pristine. Can summon new clothing at will, but it vanishes 2 hours afterwards when not worn by you.", bonus: "" },
+                { roll: 19, name: "A Way Out †", description: "Can willingly make your next death permanent, instead of regenerating your body from mana.", bonus: "+1 LCK" },
+                { roll: 20, name: "Fake Parents", description: "You have a pair of adults who are convinced they're your parents, with documentation proving it, and have just moved into town.", bonus: "" }
             ]
         }
     };
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getPerkResult(roll, tableType) {
         const table = data.perks[tableType];
         const item = table.find(entry => entry.roll === roll);
-        return item ? { result: item.name, stats: item.bonus, details: "" } : { result: "Unknown", stats: "", details: "" };
+        return item ? { result: item.name, stats: item.bonus, details: item.description || "" } : { result: "Unknown", stats: "", details: "" };
     }
 
     const exportBtn = document.getElementById('export-btn');
@@ -192,12 +192,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 7-11. Perks
         // 1 & 2: Combat
-        process('perk', 'Perk 1', 'combat');
-        process('perk', 'Perk 2', 'combat');
+        process('perk', 'Perk 1 (Combat)', 'combat');
+        process('perk', 'Perk 2 (Combat)', 'combat');
 
         // 3 & 4: Support
-        process('perk', 'Perk 3', 'support');
-        process('perk', 'Perk 4', 'support');
+        process('perk', 'Perk 3 (Support)', 'support');
+        process('perk', 'Perk 4 (Support)', 'support');
 
         // 5: Wildcard - Store both but only show combat initially
         const r5 = rollD20();
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Store both options
         currentBuild.perk5Combat = {
-            category: 'Perk 5A (Combat)',
+            category: 'Perk 5 (Combat)',
             roll: r5,
             result: res5Combat.result,
             stats: res5Combat.stats,
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
             rawName: res5Combat.result
         };
         currentBuild.perk5Support = {
-            category: 'Perk 5B (Support)',
+            category: 'Perk 5 (Support)',
             roll: r5,
             result: res5Support.result,
             stats: res5Support.stats,
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add combat version to items and display
         currentBuild.items.push(currentBuild.perk5Combat);
-        addResultRow('Perk 5A (Combat)', r5, res5Combat.result, res5Combat.stats, res5Combat.details || "");
+        addResultRow('Perk 5 (Combat)', r5, res5Combat.result, res5Combat.stats, res5Combat.details || "");
 
         resultsContainer.classList.remove('hidden');
         exportBtn.classList.remove('hidden');
