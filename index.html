@@ -1,13 +1,47 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>accidentalmahou</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accidental Magical Girl Build Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Accidental Magical Girl Build Generator</h1>
+            <p>Roll your destiny!</p>
+        </header>
+
+        <main>
+            <div class="controls">
+                <button id="generate-btn" class="btn-primary">Generate Build</button>
+                <button id="export-btn" class="btn-secondary hidden">Copy to Clipboard</button>
+            </div>
+
+            <div id="results-container" class="hidden">
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Roll</th>
+                            <th>Result</th>
+                            <th>Stats</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Results will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+        <button id="toggle-perk5-btn" class="hidden">Toggle Perk 5</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
 </html>
