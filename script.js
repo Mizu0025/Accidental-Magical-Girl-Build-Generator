@@ -254,11 +254,11 @@ document.addEventListener('DOMContentLoaded', () => {
             currentBuild.perk5Showing = 'support';
             const p = currentBuild.perk5Support;
             rows[perk5RowIndex].innerHTML = `
-                <td>${p.category}</td>
-                <td>${p.roll}</td>
-                <td>${p.result}</td>
-                <td>${p.stats}</td>
-                <td>${p.details}</td>
+                <td title="${p.category}">${p.category}</td>
+                <td title="${p.roll}">${p.roll}</td>
+                <td title="${p.result}">${p.result}</td>
+                <td title="${p.stats}">${p.stats}</td>
+                <td title="${p.details}">${p.details}</td>
             `;
             // Update items array
             const itemIndex = currentBuild.items.findIndex(i => i.category.startsWith('Perk 5'));
@@ -270,11 +270,11 @@ document.addEventListener('DOMContentLoaded', () => {
             currentBuild.perk5Showing = 'combat';
             const p = currentBuild.perk5Combat;
             rows[perk5RowIndex].innerHTML = `
-                <td>${p.category}</td>
-                <td>${p.roll}</td>
-                <td>${p.result}</td>
-                <td>${p.stats}</td>
-                <td>${p.details}</td>
+                <td title="${p.category}">${p.category}</td>
+                <td title="${p.roll}">${p.roll}</td>
+                <td title="${p.result}">${p.result}</td>
+                <td title="${p.stats}">${p.stats}</td>
+                <td title="${p.details}">${p.details}</td>
             `;
             // Update items array
             const itemIndex = currentBuild.items.findIndex(i => i.category.startsWith('Perk 5'));
@@ -331,11 +331,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function addResultRow(category, roll, result, stats, details) {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${category}</td>
-            <td>${roll}</td>
-            <td>${result}</td>
-            <td>${stats}</td>
-            <td>${details}</td>
+            <td title="${category}">${category}</td>
+            <td title="${roll}">${roll}</td>
+            <td title="${result}">${result}</td>
+            <td title="${stats}">${stats}</td>
+            <td title="${details}">${details}</td>
         `;
         resultsTableBody.appendChild(row);
     }
