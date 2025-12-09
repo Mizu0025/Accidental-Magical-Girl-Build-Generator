@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         power: [
             { range: [1, 2], type: "Killing Blow", description: "Overwhelming single attack.", notes: "+1 STR or MAG" },
             { range: [3, 4], type: "Hammerspace", description: "Extra-dimensional storage.", notes: "Stores non-living material." },
-            { range: [5, 6], type: "Twinned Soul", description: "Splits soul into two bodies.", notes: "Share stats/perks. -1 all stats." },
+            { range: [5, 6], type: "Twinned Soul", description: "Splits soul into two bodies.", bonus: "-1 all stats", notes: "Share stats/perks. -1 all stats." },
             { range: [7, 8], type: "Focused Assault", description: "Punishing blows on single enemy.", notes: "Melee or Ranged form." },
             { range: [9, 10], type: "Barrage", description: "Rapid succession attacks.", notes: "Good vs hordes." },
             { range: [11, 12], type: "Power of Friendship", description: "Instinctive social skills.", notes: "Allies easily." },
@@ -232,6 +232,9 @@ document.addEventListener('DOMContentLoaded', () => {
         exportBtn.classList.remove('hidden');
         document.querySelector('.container').classList.add('expanded');
         document.getElementById('toggle-perk5-btn').classList.remove('hidden');
+
+        const { stats, flexible } = parseBonuses(currentBuild.items);
+        updateStatsDisplay(stats, flexible);
     });
 
     // Toggle Perk 5 button functionality
@@ -282,7 +285,75 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentBuild.items[itemIndex] = currentBuild.perk5Combat;
             }
         }
+
+        const { stats, flexible } = parseBonuses(currentBuild.items);
+        updateStatsDisplay(stats, flexible);
     });
+
+    function parseBonuses(items) {
+        const stats = { STR: 4, AGI: 4, VIT: 4, MAG: 4, LCK: 4 };
+        const flexible = [];
+
+        items.forEach(item => {
+            if (!item.stats) return;
+
+            const parts = item.stats.split(',').map(s => s.trim());
+
+            parts.forEach(part => {
+                if (!part) return;
+
+                const isFlexible = /or|Any|one stat|Weapon Stat|Spec Stat|Outfit Stat/i.test(part);
+
+                if (isFlexible) {
+                    flexible.push(`${part} (${item.category})`);
+                } else {
+                    if (part.toLowerCase().includes("all stats")) {
+                        const match = part.match(/([+-]?\d+)/);
+                        if (match) {
+                            const val = parseInt(match[1], 10);
+                            ['STR', 'AGI', 'VIT', 'MAG', 'LCK'].forEach(s => stats[s] += val);
+                        }
+                    } else {
+                        const match = part.match(/([+-]?\d+)\s+(STR|AGI|VIT|MAG|LCK)/);
+                        if (match) {
+                            const val = parseInt(match[1], 10);
+                            const stat = match[2];
+                            if (stats[stat] !== undefined) {
+                                stats[stat] += val;
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        return { stats, flexible };
+    }
+
+    function updateStatsDisplay(stats, flexible) {
+        const statsDisplay = document.getElementById('stats-display');
+        const statsContent = document.getElementById('stats-content');
+        if (!statsDisplay || !statsContent) return;
+
+        let html = '';
+        for (const [key, value] of Object.entries(stats)) {
+            html += `
+                <div class="stats-row">
+                    <span class="stat-name">${key}</span>
+                    <span class="stat-value">${value}</span>
+                </div>
+            `;
+        }
+
+        if (flexible.length > 0) {
+            html += `<div class="flexible-bonus"><strong>Flexible Bonuses:</strong><ul>`;
+            flexible.forEach(f => html += `<li>${f}</li>`);
+            html += `</ul></div>`;
+        }
+
+        statsContent.innerHTML = html;
+        statsDisplay.classList.remove('hidden');
+    }
 
     exportBtn.addEventListener('click', () => {
         if (!currentBuild || currentBuild.items.length === 0) return;
@@ -296,15 +367,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const hasMasculinity = currentBuild.items.some(i => i.rawName.includes('Masculinity'));
         const gender = hasMasculinity ? "Male (Masculinity Perk)" : "Female";
 
-        const findItem = (catStart) => currentBuild.items.find(i => i.category.startsWith(catStart));
+        const formatLine = (label, catLookup) => {
+            const item = currentBuild.items.find(i => i.category.startsWith(catLookup || label));
+            if (!item) return "";
+            let line = `${label}: ${item.result}`;
+            if (item.stats) line += ` (${item.stats})`;
+            return line + "\n";
+        };
 
-        text += `Age: ${findItem('Age').result}\n`;
+        text += formatLine('Age');
         text += `Gender: ${gender}\n`;
-        text += `Body: ${findItem('Body').result}\n`;
-        text += `Specialisation: ${findItem('Specialization').result}\n`;
-        text += `Weapon: ${findItem('Weapon').result}\n`;
-        text += `Outfit: ${findItem('Outfit').result}\n`;
-        text += `Power: ${findItem('Power').result}\n`;
+        text += formatLine('Body');
+        text += formatLine('Specialisation', 'Specialization');
+        text += formatLine('Weapon');
+        text += formatLine('Outfit');
+        text += formatLine('Power');
 
         // Perks
         const perks = currentBuild.items.filter(i => i.category.startsWith('Perk'));
@@ -314,6 +391,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (p.stats) text += ` (${p.stats})`;
             text += `\n`;
         });
+
+        // Stat Block
+        const { stats, flexible } = parseBonuses(currentBuild.items);
+
+        text += `\n[Stat Block]\n`;
+        text += `STR: ${stats.STR}\n`;
+        text += `AGI: ${stats.AGI}\n`;
+        text += `VIT: ${stats.VIT}\n`;
+        text += `MAG: ${stats.MAG}\n`;
+        text += `LCK: ${stats.LCK}\n`;
+
+        if (flexible.length > 0) {
+            text += `\nFlexible Bonuses:\n`;
+            flexible.forEach(f => text += `- ${f}\n`);
+        }
 
         navigator.clipboard.writeText(text).then(() => {
             const originalText = exportBtn.innerText;

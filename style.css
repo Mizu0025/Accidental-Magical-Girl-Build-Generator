@@ -287,3 +287,81 @@ td {
     opacity: 1;
     background: rgba(255, 255, 255, 0.1);
 }
+
+/* Stats Panel */
+.stats-panel {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    width: 250px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    color: var(--text-light);
+    z-index: 1000;
+    font-size: 0.9rem;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+@media (max-width: 1400px) {
+
+    /* If screen is not super wide, move it inside or make it smaller? 
+       The container max-width is 1100px.
+    */
+    .stats-panel {
+        right: 1rem;
+    }
+}
+
+@media (max-width: 900px) {
+    .stats-panel {
+        position: static;
+        /* Flow with document on mobile/tablet */
+        margin: 1rem auto;
+        width: 90%;
+        max-width: none;
+    }
+}
+
+.stats-panel h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.flexible-bonus {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    opacity: 0.9;
+    border-top: 1px dashed var(--glass-border);
+    padding-top: 0.5rem;
+}
+
+.flexible-bonus ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.25rem 0 0 0;
+}
+
+.flexible-bonus li {
+    margin-bottom: 0.2rem;
+    padding-left: 0.5rem;
+    border-left: 2px solid var(--secondary-color);
+}
