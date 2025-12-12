@@ -151,91 +151,770 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const exportBtn = document.getElementById('export-btn');
+    const goldCountEl = document.getElementById('gold-count');
+    const silverCountEl = document.getElementById('silver-count');
+    const bronzeCountEl = document.getElementById('bronze-count');
+    // ageSelect removed, select dynamically
+    const manualSelectionsGrid = document.getElementById('manual-selections');
+    const originTypeSelect = document.getElementById('origin-type');
 
-    let currentBuild = { rolls: [], items: [], perk5Showing: 'combat' };
+    const unlockOptionsBtn = document.getElementById('unlock-options-btn');
 
-    generateBtn.addEventListener('click', () => {
-        resultsTableBody.innerHTML = '';
-        currentBuild = { rolls: [], items: [], perk5Showing: 'combat' };
+    let currentBuild = { rolls: [], items: [], perk5Showing: 'combat', purchasedStats: {}, wallet: { gold: 1, silver: 3, bronze: 4 }, origin: 'Contract' };
+    let manualMode = false;
 
-        const process = (category, label, typeOverride = null) => {
+    // --- Origin Rules ---
+    const originRules = {
+        'Contract': { gold: 1, silver: 3, bronze: 4, simple: { 'outfit': 0, 'perk5-combat': 0, 'perk5-support': 0 } },
+        'Smug': { gold: 0, silver: 2, bronze: 3, allFree: true },
+        'Weapon': { gold: 1, silver: 3, bronze: 4, simple: { 'weapon': 0 }, bonusStat: 'Weapon' },
+        'Bloodline': { gold: 1, silver: 3, bronze: 4, simple: { 'specialization': 0 }, bonusStat: 'Specialisation' },
+        'Emergency': { gold: 1, silver: 3, bronze: 4, simple: { 'perk1': 0, 'perk2': 0 }, combatShiftFree: true },
+        'Artifact': { gold: 1, silver: 3, bronze: 4, extraArtifact: true },
+        'Death': { gold: 1, silver: 4, bronze: 4 }
+    };
+
+    // Fields visible for each origin
+    const originFields = {
+        'Contract': ['outfit-select', 'perk5-select'],
+        'Smug': ['age-select', 'body-select', 'spec-select', 'weapon-select', 'outfit-select', 'power-select', 'perk5-select'],
+        'Weapon': ['weapon-select'],
+        'Bloodline': ['spec-select'],
+        'Emergency': ['e-perk1-select', 'e-perk2-select'],
+        'Artifact': ['artifact-select'],
+        'Death': [] // Death just gets coins
+    };
+
+    function setFieldVisibility(origin) {
+        // Get all selector containers (parent of select)
+        const allSelectors = [
+            'age-select', 'body-select', 'spec-select', 'weapon-select', 'outfit-select', 'power-select',
+            'perk5-select', 'e-perk1-select', 'e-perk2-select', 'artifact-select'
+        ];
+
+        const allowed = originFields[origin] || [];
+
+        allSelectors.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const container = el.parentElement; // .manual-field
+                if (manualMode || allowed.includes(id)) {
+                    container.style.display = 'flex';
+                } else {
+                    container.style.display = 'none';
+                    if (!manualMode) el.value = ""; // Reset value if hidden so it doesn't affect generation
+                }
+            }
+        });
+    }
+
+    // --- Populate Manual Selections ---
+    function populateSelections() {
+        const createSelect = (id, label, options, costId, categoryKey, dataList, valueKey = 'type') => {
+            const div = document.createElement('div');
+            div.className = 'manual-field';
+            div.innerHTML = `
+                <label for="${id}">${label} <span class="cost-badge" id="${costId}">1S</span></label>
+                <select id="${id}" data-category="${categoryKey}">
+                    <option value="">Random</option>
+                    ${options.map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('')}
+                </select>
+            `;
+            manualSelectionsGrid.appendChild(div);
+
+            const select = document.getElementById(id);
+            select.addEventListener('change', (e) => handleManualChange(e, categoryKey, dataList, valueKey));
+            return select;
+        };
+
+        createSelect('age-select', 'Age', Array.from({ length: 15 }, (_, i) => ({ value: 6 + i, text: `${6 + i} years old` })), 'cost-age', 'age', null);
+        createSelect('body-select', 'Body Type', data.body.map(b => ({ value: b.type, text: b.type })), 'cost-body', 'body', data.body);
+        createSelect('spec-select', 'Specialisation', data.specialization.map(s => ({ value: s.type, text: s.type })), 'cost-spec', 'specialization', data.specialization);
+        createSelect('weapon-select', 'Weapon', data.weapon.map(w => ({ value: w.type, text: w.type })), 'cost-weapon', 'weapon', data.weapon);
+        createSelect('outfit-select', 'Outfit', data.outfit.map(o => ({ value: o.type, text: o.type })), 'cost-outfit', 'outfit', data.outfit);
+        createSelect('power-select', 'Power', data.power.map(p => ({ value: p.type, text: p.type })), 'cost-power', 'power', data.power);
+
+        const p5Opts = [
+            ...data.perks.combat.map(p => ({ value: `C-${p.roll}`, text: `(C) ${p.name}` })),
+            ...data.perks.support.map(p => ({ value: `S-${p.roll}`, text: `(S) ${p.name}` }))
+        ];
+        createSelect('perk5-select', 'Perk 5', p5Opts, 'cost-perk5', 'perk5', null, null); // Special handling in handler
+
+        const combatPerks = data.perks.combat.filter(p => !p.name.includes('Artifact'));
+        const combatOpts = combatPerks.map(p => ({ value: p.roll, text: p.name }));
+        createSelect('e-perk1-select', 'Perk 1 (Combat)', combatOpts, 'cost-perk1', 'perk1', null);
+        createSelect('e-perk2-select', 'Perk 2 (Combat)', combatOpts, 'cost-perk2', 'perk2', null);
+
+        const artifactPerks = data.perks.combat.filter(p => p.name.includes('Artifact'));
+        const artifactOpts = artifactPerks.map(p => ({ value: p.roll, text: p.name }));
+        createSelect('artifact-select', 'Bonus Artifact', artifactOpts, 'cost-artifact', 'artifact', null);
+    }
+
+    populateSelections();
+
+    function pRange(str) {
+        if (typeof str === 'number') return [str, str];
+        if (!str) return [0, 0];
+        if (str.includes('-')) {
+            const [min, max] = str.split('-').map(Number);
+            return [min, max];
+        }
+        return [Number(str), Number(str)];
+    }
+
+    function checkOverlap(roll, rangeStr, tolerance) {
+        const [min, max] = pRange(rangeStr);
+        // Range Check: [min, max] vs [roll-tol, roll+tol]
+        const rMin = roll - tolerance;
+        const rMax = roll + tolerance;
+        return Math.max(min, rMin) <= Math.min(max, rMax);
+    }
+
+    // Handle Manual Changes Post-Generation
+    function handleManualChange(event, categoryKey, dataList, valueKey = 'type') {
+        if (!currentBuild || currentBuild.items.length === 0) {
+            alert("Please generate a character first!");
+            event.target.value = ""; // Reset selection
+            return;
+        }
+
+        const val = event.target.value;
+        const origin = currentBuild.origin;
+        const rules = originRules[origin];
+
+        let isFree = rules.allFree || (rules.simple && rules.simple[categoryKey] !== undefined);
+        if (categoryKey === 'perk5' && rules.simple && (rules.simple['perk5'] !== undefined || rules.simple['perk5-combat'] !== undefined || rules.simple['perk5-support'] !== undefined)) isFree = true;
+        if (categoryKey === 'artifact' && origin === 'Artifact') isFree = true;
+
+        // Find existing item index
+        let lookupLabel = "";
+        let isPerk = false;
+        if (categoryKey === 'age') lookupLabel = "Age";
+        else if (categoryKey === 'body') lookupLabel = "Body";
+        else if (categoryKey === 'specialization') lookupLabel = "Specialization";
+        else if (categoryKey === 'weapon') lookupLabel = "Weapon";
+        else if (categoryKey === 'outfit') lookupLabel = "Outfit";
+        else if (categoryKey === 'power') lookupLabel = "Power";
+        else if (categoryKey === 'perk5') { lookupLabel = "Perk 5"; isPerk = true; }
+        else if (categoryKey === 'perk1') { lookupLabel = "Perk 1 (Combat)"; isPerk = true; }
+        else if (categoryKey === 'perk2') { lookupLabel = "Perk 2 (Combat)"; isPerk = true; }
+        else if (categoryKey === 'artifact') { lookupLabel = "Bonus Artifact"; isPerk = true; }
+
+        let itemIndex = currentBuild.items.findIndex(i => i.category.startsWith(lookupLabel));
+
+        if (itemIndex === -1) {
+            // Special handling for artifact if it was hidden initially and now unlocked
+            if (categoryKey === 'artifact') {
+                // Try to allow adding it?? For now alert.
+            }
+            alert("Cannot find item to modify. Please generate a character first.");
+            event.target.value = ""; // Reset selection
+            return;
+        }
+
+        const existingItem = currentBuild.items[itemIndex];
+        const previousCost = existingItem.manualCost || { amount: 0, type: 'silver' }; // Default format
+
+        let newItem = null;
+        let costAmount = 0;
+        let costCurrency = 'silver';
+
+        if (val === "") {
+            // Revert to Random (Refund previous)
+            if (previousCost.amount > 0) {
+                currentBuild.wallet[previousCost.type] += previousCost.amount;
+            }
+
+            // Re-roll
             const roll = rollD20();
-            currentBuild.rolls.push(roll);
+            let res;
+            if (categoryKey === 'perk5') {
+                res = getPerkResult(roll, 'combat');
+            } else if (categoryKey.startsWith('perk') || categoryKey === 'artifact') {
+                res = getPerkResult(roll, 'combat');
+            } else if (categoryKey === 'age') {
+                res = getResult('age', roll);
+            } else {
+                res = getResult(categoryKey, roll);
+            }
 
-            const res = typeOverride ? getPerkResult(roll, typeOverride) : getResult(category, roll);
-
-            currentBuild.items.push({
-                category: label,
+            newItem = {
+                category: existingItem.category,
                 roll: roll,
                 result: res.result,
                 stats: res.stats || "",
                 details: res.details || "",
-                rawName: res.result
-            });
+                rawName: res.result,
+                manualCost: undefined
+            };
 
-            addResultRow(label, roll, res.result, res.stats || "", res.details || "");
-            return res;
-        };
+        } else {
+            // Valid Selection -> Calculate Cost
 
-        // 1. Age
-        process('age', 'Age');
-        // 2. Body
-        process('body', 'Body');
-        // 3. Specialization
-        process('specialization', 'Specialization');
-        // 4. Weapon
-        process('weapon', 'Weapon');
-        // 5. Outfit
-        process('outfit', 'Outfit');
-        // 6. Power
-        process('power', 'Power');
+            if (isFree) {
+                costAmount = 0;
+                costCurrency = 'silver';
+            } else {
+                // Determine Cost based on Rules
+                let originalRoll = parseInt(existingItem.roll);
 
-        // 7-11. Perks
-        // 1 & 2: Combat
-        process('perk', 'Perk 1 (Combat)', 'combat');
-        process('perk', 'Perk 2 (Combat)', 'combat');
+                if (isNaN(originalRoll)) {
+                    // We are editing a previously edited choice. Treat as Swap.
+                    costCurrency = 'silver';
+                    costAmount = 1;
+                    // Exception: Age Gold cost
+                    if (categoryKey === 'age') {
+                        const ageVal = parseInt(val);
+                        if (ageVal < 7 || ageVal > 16) {
+                            costCurrency = 'gold';
+                            costAmount = 1;
+                        }
+                    }
+                } else {
+                    // Logic based on Category
+                    costCurrency = 'silver'; // Default to silver
+                    costAmount = 1;
 
-        // 3 & 4: Support
-        process('perk', 'Perk 3 (Support)', 'support');
-        process('perk', 'Perk 4 (Support)', 'support');
+                    if (categoryKey === 'age') {
+                        const ageVal = parseInt(val);
+                        // Age = 6 + Roll (modified 11-20 -> -10).
+                        const currentAgeRollAdjusted = originalRoll > 10 ? originalRoll - 10 : originalRoll;
+                        const currentAge = 6 + currentAgeRollAdjusted;
 
-        // 5: Wildcard - Store both but only show combat initially
-        const r5 = rollD20();
-        currentBuild.rolls.push(r5);
+                        if (Math.abs(ageVal - currentAge) <= 1) {
+                            costCurrency = 'bronze';
+                            costAmount = 1;
+                        } else if (ageVal >= 7 && ageVal <= 16) {
+                            costCurrency = 'silver';
+                            costAmount = 1;
+                        } else {
+                            costCurrency = 'gold';
+                            costAmount = 1;
+                        }
+                    }
+                    else if (categoryKey === 'body') {
+                        const targetItem = dataList.find(i => i.type === val);
+                        if (targetItem && checkOverlap(originalRoll, targetItem.roll, 2)) {
+                            costCurrency = 'bronze';
+                            costAmount = 1;
+                        }
+                    }
+                    else if (categoryKey === 'specialization') {
+                        const targetItem = dataList.find(i => i.type === val);
+                        if (targetItem && checkOverlap(originalRoll, targetItem.roll, 1)) {
+                            costCurrency = 'bronze';
+                            costAmount = 1;
+                        }
+                    }
+                    else if (categoryKey === 'weapon' || categoryKey === 'outfit') {
+                        const targetItem = dataList.find(i => i.type === val);
+                        if (targetItem && checkOverlap(originalRoll, targetItem.roll, 4)) {
+                            costCurrency = 'bronze';
+                            costAmount = 1;
+                        }
+                    }
+                    else if (categoryKey === 'power') {
+                        const targetItem = dataList.find(i => i.type === val);
+                        if (targetItem && checkOverlap(originalRoll, targetItem.roll, 2)) {
+                            costCurrency = 'bronze';
+                            costAmount = 1;
+                        }
+                    }
+                    else if (categoryKey === 'perk5') {
+                        const [table, rStr] = val.split('-');
+                        const r = parseInt(rStr);
+                        // existingItem.category is "Perk 5 (Combat)" or "Perk 5 (Support)"
+                        const currentCat = existingItem.category;
+                        const isCombat = currentCat.includes('Combat');
+                        const targetIsCombat = table === 'C';
 
-        const res5Combat = getPerkResult(r5, 'combat');
-        const res5Support = getPerkResult(r5, 'support');
+                        if (originalRoll === r && isCombat !== targetIsCombat) {
+                            // Shift (Same Roll, Diff Table) -> Bronze
+                            costCurrency = 'bronze';
+                            costAmount = 1;
+                        } else {
+                            // Swap (Same Table) or Diff Table Diff Roll -> Silver
+                            costCurrency = 'silver';
+                            costAmount = 1;
+                        }
+                    }
+                    else if (categoryKey.startsWith('perk') || categoryKey === 'artifact') {
+                        // These are fixed to Combat table in populateSelections, so it's always a "Swap" within the same table.
+                        costCurrency = 'silver';
+                        costAmount = 1;
+                    }
+                }
+            }
 
-        // Store both options
-        currentBuild.perk5Combat = {
-            category: 'Perk 5 (Combat)',
-            roll: r5,
-            result: res5Combat.result,
-            stats: res5Combat.stats,
-            details: res5Combat.details || "",
-            rawName: res5Combat.result
-        };
-        currentBuild.perk5Support = {
-            category: 'Perk 5 (Support)',
-            roll: r5,
-            result: res5Support.result,
-            stats: res5Support.stats,
-            details: res5Support.details || "",
-            rawName: res5Support.result
-        };
+            // Pay
+            // If replacing previous manual: refund old, pay new.
+            if (previousCost.amount > 0) {
+                currentBuild.wallet[previousCost.type] += previousCost.amount;
+            }
 
-        // Add combat version to items and display
-        currentBuild.items.push(currentBuild.perk5Combat);
-        addResultRow('Perk 5 (Combat)', r5, res5Combat.result, res5Combat.stats, res5Combat.details || "");
+            if (currentBuild.wallet[costCurrency] < costAmount) {
+                // Not enough
+                // Revert refund
+                if (previousCost.amount > 0) {
+                    currentBuild.wallet[previousCost.type] -= previousCost.amount;
+                }
 
-        resultsContainer.classList.remove('hidden');
-        exportBtn.classList.remove('hidden');
-        document.querySelector('.container').classList.add('expanded');
-        document.getElementById('toggle-perk5-btn').classList.remove('hidden');
+                alert(`Not enough ${costCurrency}! Cost: ${costAmount} ${costCurrency}`);
+                event.target.value = existingItem.rawName.includes('(Selected)') ? existingItem.rawName.replace(' (Selected)', '') : "";
+                return;
+            }
 
+            currentBuild.wallet[costCurrency] -= costAmount;
+
+            // Generate Manual Item Data
+            let res = { result: "", stats: "", details: "" };
+
+            if (categoryKey === 'age') {
+                res = {
+                    result: `${val} years old (Selected)`,
+                    stats: "",
+                    details: "Immortal, no longer ages."
+                };
+            } else if (categoryKey === 'perk5') {
+                const [table, r] = val.split('-');
+                const rollVal = parseInt(r);
+                const tableType = table === 'C' ? 'combat' : 'support';
+                const pData = getPerkResult(rollVal, tableType);
+                res = { ...pData, result: pData.result };
+            } else if (categoryKey.startsWith('perk') || categoryKey === 'artifact') {
+                const rollVal = parseInt(val);
+                const pData = getPerkResult(rollVal, 'combat');
+                res = { ...pData, result: pData.result };
+            } else {
+                const d = dataList.find(i => i[valueKey] == val);
+                res = {
+                    result: d[valueKey] + " (Selected)",
+                    stats: d.bonus || d.notes || "",
+                    details: d.description || d.examples || ""
+                };
+            }
+
+            newItem = {
+                category: existingItem.category,
+                roll: "-",
+                result: res.result,
+                stats: res.stats || "",
+                details: res.details || "",
+                rawName: res.result,
+                manualCost: { amount: costAmount, type: costCurrency } // Store object
+            };
+        }
+
+        // Apply Update
+        currentBuild.items[itemIndex] = newItem;
+
+        const rows = document.querySelectorAll('#results-body tr');
+        for (let row of rows) {
+            const catCell = row.firstElementChild;
+            if (catCell && catCell.textContent === existingItem.category) {
+                row.innerHTML = `
+                    <td title="${newItem.category}">${newItem.category}</td>
+                    <td title="${newItem.roll}">${newItem.roll}</td>
+                    <td title="${newItem.result}">${newItem.result}</td>
+                    <td title="${newItem.stats}">${newItem.stats}</td>
+                    <td title="${newItem.details}">${newItem.details}</td>
+                 `;
+                break;
+            }
+        }
+
+        updateWalletUI();
         const { stats, flexible } = parseBonuses(currentBuild.items);
         updateStatsDisplay(stats, flexible);
-    });
+    }
+
+    function updateCosts() {
+        const origin = originTypeSelect.value;
+        const rules = originRules[origin];
+
+        currentBuild.origin = origin;
+        currentBuild.wallet = { gold: rules.gold, silver: rules.silver, bronze: rules.bronze };
+
+        setFieldVisibility(origin);
+
+        const isFree = (key) => rules.allFree || (rules.simple && rules.simple[key] !== undefined);
+
+        const setBadge = (id, key) => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (isFree(key)) {
+                    el.innerText = "Free";
+                    el.className = "cost-badge cost-free";
+                } else {
+                    el.innerText = "1S";
+                    el.className = "cost-badge";
+                }
+            }
+        };
+
+        setBadge('cost-age', 'age');
+        setBadge('cost-body', 'body');
+        setBadge('cost-spec', 'specialization');
+        setBadge('cost-weapon', 'weapon');
+        setBadge('cost-outfit', 'outfit');
+        setBadge('cost-power', 'power');
+
+        const perk5Free = isFree('perk5') || isFree('perk5-combat') || isFree('perk5-support');
+        const p5Badge = document.getElementById('cost-perk5');
+        if (p5Badge) {
+            p5Badge.innerText = perk5Free ? "Free" : "1S";
+            p5Badge.className = perk5Free ? "cost-badge cost-free" : "cost-badge";
+        }
+
+        const p1Free = isFree('perk1');
+        const p1Badge = document.getElementById('cost-perk1');
+        if (p1Badge) {
+            p1Badge.innerText = p1Free ? "Free" : "1S";
+            p1Badge.className = p1Free ? "cost-badge cost-free" : "cost-badge";
+        }
+
+        const p2Free = isFree('perk2');
+        const p2Badge = document.getElementById('cost-perk2');
+        if (p2Badge) {
+            p2Badge.innerText = p2Free ? "Free" : "1S";
+            p2Badge.className = p2Free ? "cost-badge cost-free" : "cost-badge";
+        }
+
+        const artBadge = document.getElementById('cost-artifact');
+        if (artBadge) { // Ensure element exists
+            if (origin === 'Artifact') {
+                artBadge.innerText = "Free";
+                artBadge.className = "cost-badge cost-free";
+            } else {
+                artBadge.innerText = "1S";
+                artBadge.className = "cost-badge";
+            }
+        }
+
+        updateWalletUI();
+
+        if (unlockOptionsBtn) {
+            unlockOptionsBtn.textContent = manualMode ? "Hide Options" : "Unlock All Options";
+            if (manualMode) {
+                unlockOptionsBtn.classList.remove('btn-secondary');
+                unlockOptionsBtn.classList.add('btn-primary');
+            } else {
+                unlockOptionsBtn.classList.add('btn-secondary');
+                unlockOptionsBtn.classList.remove('btn-primary');
+            }
+        }
+    }
+
+    if (unlockOptionsBtn) {
+        unlockOptionsBtn.addEventListener('click', () => {
+            manualMode = !manualMode;
+            updateCosts();
+        });
+    }
+
+    originTypeSelect.addEventListener('change', updateCosts);
+    updateCosts();
+
+    function updateWalletUI() {
+        if (goldCountEl) goldCountEl.textContent = currentBuild.wallet.gold;
+        if (silverCountEl) silverCountEl.textContent = currentBuild.wallet.silver;
+        if (bronzeCountEl) bronzeCountEl.textContent = currentBuild.wallet.bronze;
+
+        const bronzeBtns = document.querySelectorAll('.btn-stat.bronze');
+        const silverBtns = document.querySelectorAll('.btn-stat.silver');
+        const goldBtns = document.querySelectorAll('.btn-stat.gold');
+
+        bronzeBtns.forEach(btn => btn.disabled = currentBuild.wallet.bronze <= 0);
+        silverBtns.forEach(btn => btn.disabled = currentBuild.wallet.silver <= 0);
+        goldBtns.forEach(btn => btn.disabled = currentBuild.wallet.gold <= 0);
+    }
+
+    const process = (category, label, typeOverride = null, manualResult = null) => {
+        if (manualResult) {
+            currentBuild.items.push({
+                category: label,
+                roll: "-",
+                result: manualResult.result,
+                stats: manualResult.stats || "",
+                details: manualResult.details || "",
+                rawName: manualResult.result,
+                manualCost: manualResult.manualCost
+            });
+            addResultRow(label, "-", manualResult.result, manualResult.stats || "", manualResult.details || "");
+            return manualResult;
+        }
+
+        const roll = rollD20();
+        const res = typeOverride ? getPerkResult(roll, typeOverride) : getResult(category, roll);
+
+        currentBuild.rolls.push(roll);
+        currentBuild.items.push({
+            category: label,
+            roll: roll,
+            result: res.result,
+            stats: res.stats || "",
+            details: res.details || "",
+            rawName: res.result
+        });
+
+        addResultRow(label, roll, res.result, res.stats || "", res.details || "");
+        return res;
+    };
+
+    // Handle Initial Manual Selection (Pre-generation)
+    function handleSelection(elementId, categoryKey, dataList, valueKey = 'type', isPerk = false) {
+        const el = document.getElementById(elementId);
+        if (!el || !el.value) return null;
+
+        const val = el.value;
+        const origin = currentBuild.origin;
+        const rules = originRules[origin];
+
+        let isFree = rules.allFree || (rules.simple && rules.simple[categoryKey] !== undefined);
+        if (categoryKey === 'perk5' && rules.simple && (rules.simple['perk5'] !== undefined || rules.simple['perk5-combat'] !== undefined || rules.simple['perk5-support'] !== undefined)) isFree = true;
+        if (categoryKey === 'artifact' && origin === 'Artifact') isFree = true;
+
+        let costAmount = 0;
+        let costCurrency = 'silver';
+
+        if (!isFree) {
+            costAmount = 1;
+            costCurrency = 'silver';
+
+            // Special Age Logic
+            if (categoryKey === 'age') {
+                const ageVal = parseInt(val);
+                if (ageVal < 7 || ageVal > 16) {
+                    costCurrency = 'gold';
+                }
+            }
+        }
+
+        if (currentBuild.wallet[costCurrency] < costAmount) {
+            alert(`Not enough ${costCurrency} for ${categoryKey} selection! Resetting to random.`);
+            el.value = "";
+            return null;
+        }
+
+        currentBuild.wallet[costCurrency] -= costAmount;
+
+        // Construct Item Data
+        let itemData = null;
+        if (isPerk) {
+            if (categoryKey === 'perk5') {
+                const [table, r] = val.split('-');
+                const rollVal = parseInt(r);
+                const tableType = table === 'C' ? 'combat' : 'support';
+                const pData = getPerkResult(rollVal, tableType);
+                itemData = { ...pData, roll: rollVal + " (Manual)", manualCost: { amount: costAmount, type: costCurrency } };
+            } else {
+                const rollVal = parseInt(val);
+                const pData = getPerkResult(rollVal, 'combat');
+                itemData = { ...pData, roll: rollVal + " (Manual)", manualCost: { amount: costAmount, type: costCurrency } };
+            }
+        } else if (categoryKey === 'age') {
+            const ageVal = parseInt(val);
+            itemData = {
+                result: `${ageVal} years old (Selected)`,
+                stats: "",
+                details: "Immortal, no longer ages.",
+                manualCost: { amount: costAmount, type: costCurrency }
+            };
+        } else {
+            const item = dataList.find(d => d[valueKey] === val);
+            itemData = item ? {
+                result: item[valueKey] + " (Selected)",
+                stats: item.bonus || item.notes || "",
+                details: item.description || item.examples || ""
+            } : null;
+            if (itemData) itemData.manualCost = { amount: costAmount, type: costCurrency };
+        }
+
+        return itemData;
+    }
+
+    if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+            currentBuild = {
+                rolls: [],
+                items: [],
+                perk5Showing: 'combat',
+                purchasedStats: { STR: 0, AGI: 0, VIT: 0, MAG: 0, LCK: 0 },
+                wallet: { gold: 0, silver: 0, bronze: 0 },
+                origin: originTypeSelect.value
+            };
+
+            // Note: Not clearing manual fields so they act as "locks" if populated
+
+            document.getElementById('results-body').innerHTML = "";
+            document.getElementById('stats-content').innerHTML = "";
+            document.getElementById('toggle-perk5-btn').classList.remove('hidden');
+            resultsContainer.classList.remove('hidden');
+            exportBtn.classList.remove('hidden');
+
+            updateCosts();
+
+            // Process Standard Fields
+            const ageMsg = handleSelection('age-select', 'age', null);
+            const bodyMsg = handleSelection('body-select', 'body', data.body);
+            const specMsg = handleSelection('spec-select', 'specialization', data.specialization);
+            const weapMsg = handleSelection('weapon-select', 'weapon', data.weapon);
+            const outMsg = handleSelection('outfit-select', 'outfit', data.outfit);
+            const powMsg = handleSelection('power-select', 'power', data.power);
+
+            updateWalletUI();
+
+            process('age', 'Age', null, ageMsg);
+            process('body', 'Body', null, bodyMsg);
+            process('specialization', 'Specialization', null, specMsg);
+            process('weapon', 'Weapon', null, weapMsg);
+            process('outfit', 'Outfit', null, outMsg);
+            process('power', 'Power', null, powMsg);
+
+            // Perk Logic with Duplicates
+            const seenPerks = new Set();
+
+            const handlePerkGen = (label, type, manualId, manualKey) => {
+                const mVal = document.getElementById(manualId) ? document.getElementById(manualId).value : null;
+                if (mVal) {
+                    // Manual Selection
+                    const pMsg = handleSelection(manualId, manualKey, null, null, manualKey === 'perk5');
+                    if (pMsg) seenPerks.add(pMsg.result);
+                    return process(null, label, null, pMsg);
+                }
+
+                // Random Roll
+                const roll = rollD20();
+                currentBuild.rolls.push(roll);
+
+                let res = getPerkResult(roll, type);
+                let note = "";
+
+                if (seenPerks.has(res.result)) {
+                    // Duplicate! Flip table.
+                    const newType = type === 'combat' ? 'support' : 'combat';
+                    res = getPerkResult(roll, newType);
+                    note = " (Duplicate -> Swapped)";
+
+                    if (seenPerks.has(res.result)) {
+                        // Double Duplicate! Free Choice.
+                        res = {
+                            result: "Free Perk Choice",
+                            stats: "User Choice",
+                            details: "You rolled a duplicate twice! Select any perk manually.",
+                            isWildcard: true
+                        };
+                        note = " (Double Duplicate -> Free Choice)";
+                    }
+                }
+
+                seenPerks.add(res.result);
+
+                currentBuild.items.push({
+                    category: label,
+                    roll: roll + note,
+                    result: res.result,
+                    stats: res.stats || "",
+                    details: res.details || "",
+                    rawName: res.result
+                });
+
+                addResultRow(label, roll + note, res.result, res.stats || "", res.details || "");
+                return res;
+            };
+
+            handlePerkGen('Perk 1 (Combat)', 'combat', 'e-perk1-select', 'perk1');
+            handlePerkGen('Perk 2 (Combat)', 'combat', 'e-perk2-select', 'perk2');
+            handlePerkGen('Perk 3 (Support)', 'support', 'null-id', 'perk3');
+            handlePerkGen('Perk 4 (Support)', 'support', 'null-id', 'perk4');
+
+            // Perk 5
+            const p5Val = document.getElementById('perk5-select').value;
+            if (p5Val) {
+                const p5Msg = handleSelection('perk5-select', 'perk5', null, null, true);
+                process(null, 'Perk 5 (Choice)', null, p5Msg);
+                document.getElementById('toggle-perk5-btn').classList.add('hidden'); // Hide toggle if manual
+                if (p5Msg) seenPerks.add(p5Msg.result);
+            } else {
+                // Random Perk 5
+                const roll = rollD20();
+                currentBuild.rolls.push(roll);
+
+                let resC = getPerkResult(roll, 'combat');
+                let resS = getPerkResult(roll, 'support');
+
+                let finalRes = resC;
+                let type = 'combat';
+
+                // Prefer non-duplicate
+                if (seenPerks.has(resC.result) && !seenPerks.has(resS.result)) {
+                    finalRes = resS;
+                    type = 'support';
+                }
+                else if (seenPerks.has(resC.result) && seenPerks.has(resS.result)) {
+                    finalRes = {
+                        result: "Free Perk Choice",
+                        stats: "User Choice",
+                        details: "You rolled a duplicate twice! Select any perk manually.",
+                        isWildcard: true
+                    };
+                }
+
+                currentBuild.items.push({
+                    category: 'Perk 5 (Choice)',
+                    roll: roll,
+                    result: finalRes.result,
+                    stats: finalRes.stats || "",
+                    details: finalRes.details || "",
+                    rawName: finalRes.result
+                });
+                addResultRow('Perk 5 (Choice)', roll, finalRes.result, finalRes.stats || "", finalRes.details || "");
+
+                currentBuild.perk5Showing = type;
+
+                // Populate alternates for toggle
+                currentBuild.perk5Combat = { category: 'Perk 5 (Combat)', roll: roll, result: resC.result, stats: resC.stats, details: resC.details, rawName: resC.result };
+                currentBuild.perk5Support = { category: 'Perk 5 (Support)', roll: roll, result: resS.result, stats: resS.stats, details: resS.details, rawName: resS.result };
+            }
+
+            // Artifact check
+            const rules = originRules[currentBuild.origin];
+            if (rules.extraArtifact) {
+                const artMsg = handleSelection('artifact-select', 'artifact', null);
+                if (artMsg) {
+                    process(null, 'Bonus Artifact', null, artMsg);
+                } else {
+                    // Random Artifact logic (Perk roll but name includes Artifact)
+                    // No, accidentalMahou.md says artifacts are specific entries.
+                    // Let's assume we filter for them.
+                    // ... Actually just assume regular handling or simplify.
+                    // "Artifact (+Free Artifact Perk)" from origin.
+                    // Let's roll until we get an artifact? Or just pick from list?
+                    // Quick hack: filter duplicate list logic for artifacts?
+                    // data.perks.combat has artifacts.
+                    // Simple random selection from ONLY artifacts to ensure we get one.
+                    const artPerks = data.perks.combat.filter(p => p.name.includes("Artifact"));
+                    const randArt = artPerks[Math.floor(Math.random() * artPerks.length)];
+
+                    currentBuild.items.push({
+                        category: 'Bonus Artifact',
+                        roll: randArt.roll, // Fake roll number from index?
+                        result: randArt.name,
+                        stats: randArt.bonus,
+                        details: randArt.description,
+                        rawName: randArt.name
+                    });
+                    addResultRow('Bonus Artifact', randArt.roll, randArt.name, randArt.bonus, randArt.description);
+                }
+            }
+
+            const { stats, flexible } = parseBonuses(currentBuild.items);
+            updateStatsDisplay(stats, flexible);
+            updateWalletUI();
+
+            document.querySelector('.container').classList.add('expanded');
+        });
+    }
 
     // Toggle Perk 5 button functionality
     const togglePerk5Btn = document.getElementById('toggle-perk5-btn');
@@ -290,6 +969,32 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStatsDisplay(stats, flexible);
     });
 
+    // Handle Stat Purchase
+    window.purchaseStat = (stat, type) => {
+        if (!currentBuild || !currentBuild.wallet) return;
+
+        if (type === 'bronze') {
+            if (currentBuild.wallet.bronze > 0) {
+                currentBuild.wallet.bronze--;
+                currentBuild.purchasedStats[stat] += 1;
+            }
+        } else if (type === 'silver') {
+            if (currentBuild.wallet.silver > 0) {
+                currentBuild.wallet.silver--;
+                currentBuild.purchasedStats[stat] += 2;
+            }
+        } else if (type === 'gold') {
+            if (currentBuild.wallet.gold > 0) {
+                currentBuild.wallet.gold--;
+                currentBuild.purchasedStats[stat] += 4;
+            }
+        }
+
+        updateWalletUI();
+        const { stats, flexible } = parseBonuses(currentBuild.items);
+        updateStatsDisplay(stats, flexible);
+    };
+
     function parseBonuses(items) {
         const stats = { STR: 4, AGI: 4, VIT: 4, MAG: 4, LCK: 4 };
         const flexible = [];
@@ -327,6 +1032,24 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+
+        // Add purchased stats
+        if (currentBuild.purchasedStats) {
+            for (const [key, val] of Object.entries(currentBuild.purchasedStats)) {
+                if (stats[key] !== undefined) {
+                    stats[key] += val;
+                }
+            }
+        }
+
+        // Add Origin Bonus Stats
+        const origin = currentBuild.origin;
+        if (origin === 'Weapon') {
+            flexible.push('+1 Weapon Stat (Origin Bonus)');
+        } else if (origin === 'Bloodline') {
+            flexible.push('+1 Specialisation Stat (Origin Bonus)');
+        }
+
         return { stats, flexible };
     }
 
@@ -340,7 +1063,12 @@ document.addEventListener('DOMContentLoaded', () => {
             html += `
                 <div class="stats-row">
                     <span class="stat-name">${key}</span>
-                    <span class="stat-value">${value}</span>
+                    <div class="stat-controls">
+                        <span class="stat-value">${value}</span>
+                        <button class="btn-stat bronze" onclick="purchaseStat('${key}', 'bronze')" title="Spend 1 Bronze (+1)">+B</button>
+                        <button class="btn-stat silver" onclick="purchaseStat('${key}', 'silver')" title="Spend 1 Silver (+2)">+S</button>
+                        <button class="btn-stat gold" onclick="purchaseStat('${key}', 'gold')" title="Spend 1 Gold (+4)">+4</button>
+                    </div>
                 </div>
             `;
         }
