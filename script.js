@@ -162,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentBuild = { rolls: [], items: [], perk5Showing: 'combat', purchasedStats: {}, wallet: { gold: 1, silver: 3, bronze: 4 }, origin: 'Contract' };
     let manualMode = false;
+    let upgradesPurchased = { power2: false, extras: false };
 
     // --- Origin Rules ---
     const originRules = {
@@ -189,7 +190,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Get all selector containers (parent of select)
         const allSelectors = [
             'age-select', 'body-select', 'spec-select', 'weapon-select', 'outfit-select', 'power-select',
-            'perk5-select', 'e-perk1-select', 'e-perk2-select', 'artifact-select'
+            'perk5-select', 'e-perk1-select', 'e-perk2-select', 'e-perk3-select', 'e-perk4-select',
+            'artifact-select', 'power2-select', 'extra-perk1-select', 'extra-perk2-select'
         ];
 
         const allowed = originFields[origin] || [];
@@ -198,12 +200,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = document.getElementById(id);
             if (el) {
                 const container = el.parentElement; // .manual-field
+                let shouldShow = false;
+
                 if (manualMode || allowed.includes(id)) {
-                    container.style.display = 'flex';
-                } else {
-                    container.style.display = 'none';
-                    if (!manualMode) el.value = ""; // Reset value if hidden so it doesn't affect generation
+                    shouldShow = true;
                 }
+
+                // Hide Artifact unless Origin is Artifact (requested specific behavior)
+                if (id === 'artifact-select' && origin !== 'Artifact') {
+                    shouldShow = false;
+                }
+
+                // Hide Upgrades unless purchased
+                if (id === 'power2-select' && !upgradesPurchased.power2) shouldShow = false;
+                if ((id === 'extra-perk1-select' || id === 'extra-perk2-select') && !upgradesPurchased.extras) shouldShow = false;
+
+                container.style.display = shouldShow ? 'flex' : 'none';
+                if (!shouldShow && !manualMode && !id.includes('power2') && !id.includes('extra')) el.value = "";
+                // Don't reset purchased upgrades on toggle, or do we? Probably safe to not reset if they are just hidden.
             }
         });
     }
@@ -233,6 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
         createSelect('weapon-select', 'Weapon', data.weapon.map(w => ({ value: w.type, text: w.type })), 'cost-weapon', 'weapon', data.weapon);
         createSelect('outfit-select', 'Outfit', data.outfit.map(o => ({ value: o.type, text: o.type })), 'cost-outfit', 'outfit', data.outfit);
         createSelect('power-select', 'Power', data.power.map(p => ({ value: p.type, text: p.type })), 'cost-power', 'power', data.power);
+        createSelect('power2-select', 'Second Power', data.power.map(p => ({ value: p.type, text: p.type })), 'cost-power2', 'power2', data.power);
 
         const p5Opts = [
             ...data.perks.combat.map(p => ({ value: `C-${p.roll}`, text: `(C) ${p.name}` })),
@@ -244,6 +259,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const combatOpts = combatPerks.map(p => ({ value: p.roll, text: p.name }));
         createSelect('e-perk1-select', 'Perk 1 (Combat)', combatOpts, 'cost-perk1', 'perk1', null);
         createSelect('e-perk2-select', 'Perk 2 (Combat)', combatOpts, 'cost-perk2', 'perk2', null);
+
+        const supportPerks = data.perks.support;
+        const supportOpts = supportPerks.map(p => ({ value: p.roll, text: p.name }));
+        createSelect('e-perk3-select', 'Perk 3 (Support)', supportOpts, 'cost-perk3', 'perk3', null);
+        createSelect('e-perk4-select', 'Perk 4 (Support)', supportOpts, 'cost-perk4', 'perk4', null);
+
+        createSelect('extra-perk1-select', 'Extra Perk 1', combatOpts, 'cost-extra1', 'extra-perk1', null);
+        createSelect('extra-perk2-select', 'Extra Perk 2', combatOpts, 'cost-extra2', 'extra-perk2', null);
 
         const artifactPerks = data.perks.combat.filter(p => p.name.includes('Artifact'));
         const artifactOpts = artifactPerks.map(p => ({ value: p.roll, text: p.name }));
@@ -295,19 +318,20 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (categoryKey === 'weapon') lookupLabel = "Weapon";
         else if (categoryKey === 'outfit') lookupLabel = "Outfit";
         else if (categoryKey === 'power') lookupLabel = "Power";
+        else if (categoryKey === 'power2') lookupLabel = "Second Power";
         else if (categoryKey === 'perk5') { lookupLabel = "Perk 5"; isPerk = true; }
         else if (categoryKey === 'perk1') { lookupLabel = "Perk 1 (Combat)"; isPerk = true; }
         else if (categoryKey === 'perk2') { lookupLabel = "Perk 2 (Combat)"; isPerk = true; }
+        else if (categoryKey === 'perk3') { lookupLabel = "Perk 3 (Support)"; isPerk = true; }
+        else if (categoryKey === 'perk4') { lookupLabel = "Perk 4 (Support)"; isPerk = true; }
+        else if (categoryKey === 'extra-perk1') { lookupLabel = "Extra Perk 1"; isPerk = true; }
+        else if (categoryKey === 'extra-perk2') { lookupLabel = "Extra Perk 2"; isPerk = true; }
         else if (categoryKey === 'artifact') { lookupLabel = "Bonus Artifact"; isPerk = true; }
 
         let itemIndex = currentBuild.items.findIndex(i => i.category.startsWith(lookupLabel));
 
         if (itemIndex === -1) {
-            // Special handling for artifact if it was hidden initially and now unlocked
-            if (categoryKey === 'artifact') {
-                // Try to allow adding it?? For now alert.
-            }
-            alert("Cannot find item to modify. Please generate a character first.");
+            alert("Cannot find item to modify. Please generate a character first, or purchase the slot.");
             event.target.value = ""; // Reset selection
             return;
         }
@@ -330,10 +354,14 @@ document.addEventListener('DOMContentLoaded', () => {
             let res;
             if (categoryKey === 'perk5') {
                 res = getPerkResult(roll, 'combat');
-            } else if (categoryKey.startsWith('perk') || categoryKey === 'artifact') {
+            } else if (categoryKey === 'perk3' || categoryKey === 'perk4') {
+                res = getPerkResult(roll, 'support');
+            } else if (categoryKey.startsWith('perk') || categoryKey.startsWith('extra-perk') || categoryKey === 'artifact') {
                 res = getPerkResult(roll, 'combat');
             } else if (categoryKey === 'age') {
                 res = getResult('age', roll);
+            } else if (categoryKey === 'power' || categoryKey === 'power2') {
+                res = getResult('power', roll);
             } else {
                 res = getResult(categoryKey, roll);
             }
@@ -377,7 +405,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (categoryKey === 'age') {
                         const ageVal = parseInt(val);
-                        // Age = 6 + Roll (modified 11-20 -> -10).
                         const currentAgeRollAdjusted = originalRoll > 10 ? originalRoll - 10 : originalRoll;
                         const currentAge = 6 + currentAgeRollAdjusted;
 
@@ -413,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             costAmount = 1;
                         }
                     }
-                    else if (categoryKey === 'power') {
+                    else if (categoryKey === 'power' || categoryKey === 'power2') {
                         const targetItem = dataList.find(i => i.type === val);
                         if (targetItem && checkOverlap(originalRoll, targetItem.roll, 2)) {
                             costCurrency = 'bronze';
@@ -423,23 +450,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     else if (categoryKey === 'perk5') {
                         const [table, rStr] = val.split('-');
                         const r = parseInt(rStr);
-                        // existingItem.category is "Perk 5 (Combat)" or "Perk 5 (Support)"
                         const currentCat = existingItem.category;
                         const isCombat = currentCat.includes('Combat');
                         const targetIsCombat = table === 'C';
 
                         if (originalRoll === r && isCombat !== targetIsCombat) {
-                            // Shift (Same Roll, Diff Table) -> Bronze
                             costCurrency = 'bronze';
                             costAmount = 1;
                         } else {
-                            // Swap (Same Table) or Diff Table Diff Roll -> Silver
                             costCurrency = 'silver';
                             costAmount = 1;
                         }
                     }
-                    else if (categoryKey.startsWith('perk') || categoryKey === 'artifact') {
-                        // These are fixed to Combat table in populateSelections, so it's always a "Swap" within the same table.
+                    else if (categoryKey.startsWith('perk') || categoryKey.startsWith('extra-perk') || categoryKey === 'artifact') {
                         costCurrency = 'silver';
                         costAmount = 1;
                     }
@@ -447,18 +470,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Pay
-            // If replacing previous manual: refund old, pay new.
             if (previousCost.amount > 0) {
                 currentBuild.wallet[previousCost.type] += previousCost.amount;
             }
 
             if (currentBuild.wallet[costCurrency] < costAmount) {
-                // Not enough
-                // Revert refund
                 if (previousCost.amount > 0) {
                     currentBuild.wallet[previousCost.type] -= previousCost.amount;
                 }
-
                 alert(`Not enough ${costCurrency}! Cost: ${costAmount} ${costCurrency}`);
                 event.target.value = existingItem.rawName.includes('(Selected)') ? existingItem.rawName.replace(' (Selected)', '') : "";
                 return;
@@ -481,10 +500,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tableType = table === 'C' ? 'combat' : 'support';
                 const pData = getPerkResult(rollVal, tableType);
                 res = { ...pData, result: pData.result };
-            } else if (categoryKey.startsWith('perk') || categoryKey === 'artifact') {
+
+            } else if (categoryKey === 'perk3' || categoryKey === 'perk4') {
+                const rollVal = parseInt(val);
+                const pData = getPerkResult(rollVal, 'support');
+                res = { ...pData, result: pData.result };
+
+            } else if (categoryKey.startsWith('perk') || categoryKey.startsWith('extra-perk') || categoryKey === 'artifact') {
                 const rollVal = parseInt(val);
                 const pData = getPerkResult(rollVal, 'combat');
                 res = { ...pData, result: pData.result };
+
             } else {
                 const d = dataList.find(i => i[valueKey] == val);
                 res = {
@@ -501,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 stats: res.stats || "",
                 details: res.details || "",
                 rawName: res.result,
-                manualCost: { amount: costAmount, type: costCurrency } // Store object
+                manualCost: { amount: costAmount, type: costCurrency }
             };
         }
 
@@ -627,6 +653,95 @@ document.addEventListener('DOMContentLoaded', () => {
         bronzeBtns.forEach(btn => btn.disabled = currentBuild.wallet.bronze <= 0);
         silverBtns.forEach(btn => btn.disabled = currentBuild.wallet.silver <= 0);
         goldBtns.forEach(btn => btn.disabled = currentBuild.wallet.gold <= 0);
+
+        renderUpgradesUI();
+    }
+
+    function renderUpgradesUI() {
+        const container = document.getElementById('upgrades-container');
+        if (!container) return;
+
+        if (!currentBuild || currentBuild.rolls.length === 0) {
+            container.innerHTML = "";
+            // container.classList.add('hidden'); // Optional: hide if empty
+            return;
+        }
+        // container.classList.remove('hidden');
+
+        container.innerHTML = "";
+
+        // Button: Buy Second Power (1 Gold)
+        const btnPower = document.createElement('button');
+        btnPower.className = `btn-upgrade ${upgradesPurchased.power2 ? 'purchased' : ''}`;
+        btnPower.innerHTML = upgradesPurchased.power2 ? "✅ Power 2 Unlocked" : "Buy Second Power (1 🟡)";
+        btnPower.onclick = () => handleUpgradePurchase('power2');
+        if (!upgradesPurchased.power2 && currentBuild.wallet.gold < 1) btnPower.disabled = true;
+
+        // Button: Buy 2 Extra Perks (1 Gold)
+        const btnPerks = document.createElement('button');
+        btnPerks.className = `btn-upgrade ${upgradesPurchased.extras ? 'purchased' : ''}`;
+        btnPerks.innerHTML = upgradesPurchased.extras ? "✅ Extra Perks Unlocked" : "Buy 2 Extra Perks (1 🟡)";
+        btnPerks.onclick = () => handleUpgradePurchase('extras');
+        if (!upgradesPurchased.extras && currentBuild.wallet.gold < 1) btnPerks.disabled = true;
+
+        container.appendChild(btnPower);
+        container.appendChild(btnPerks);
+    }
+
+    function handleUpgradePurchase(type) {
+        if (currentBuild.wallet.gold < 1) return;
+
+        if (type === 'power2' && !upgradesPurchased.power2) {
+            currentBuild.wallet.gold--;
+            upgradesPurchased.power2 = true;
+
+            const powMsg = handleSelection('power2-select', 'power2', data.power);
+            process('power', 'Second Power', null, powMsg);
+
+        } else if (type === 'extras' && !upgradesPurchased.extras) {
+            currentBuild.wallet.gold--;
+            upgradesPurchased.extras = true;
+
+            // Generate 2 Extra Perks
+            // Re-use logic: reconstruct seenPerks
+            const seenPerks = new Set(currentBuild.items.map(i => i.result));
+
+            const genPerk = (label, manualId, manualKey) => {
+                const mVal = document.getElementById(manualId) ? document.getElementById(manualId).value : null;
+                if (mVal) {
+                    const pMsg = handleSelection(manualId, manualKey, null, null, true);
+                    process(null, label, null, pMsg);
+                    if (pMsg) seenPerks.add(pMsg.result);
+                } else {
+                    const roll = rollD20();
+                    currentBuild.rolls.push(roll);
+                    // Default to Combat for extras
+                    let res = getPerkResult(roll, 'combat');
+                    let note = "";
+
+                    if (seenPerks.has(res.result)) {
+                        res = getPerkResult(roll, 'support'); // Flip
+                        note = " (Duplicate -> Swapped)";
+                        if (seenPerks.has(res.result)) {
+                            res = { result: "Free Perk Choice", stats: "User Choice", details: "Select any perk manually.", isWildcard: true };
+                            note = " (Double Duplicate -> Free Choice)";
+                        }
+                    }
+                    seenPerks.add(res.result);
+
+                    currentBuild.items.push({ category: label, roll: roll + note, result: res.result, stats: res.stats || "", details: res.details || "", rawName: res.result });
+                    addResultRow(label, roll + note, res.result, res.stats || "", res.details || "");
+                }
+            };
+
+            genPerk('Extra Perk 1', 'extra-perk1-select', 'extra-perk1');
+            genPerk('Extra Perk 2', 'extra-perk2-select', 'extra-perk2');
+        }
+
+        updateWalletUI();
+        updateCosts();
+        const { stats, flexible } = parseBonuses(currentBuild.items);
+        updateStatsDisplay(stats, flexible);
     }
 
     const process = (category, label, typeOverride = null, manualResult = null) => {
@@ -661,7 +776,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return res;
     };
 
-    // Handle Initial Manual Selection (Pre-generation)
+    // Helper: handlePerkGen logic reused? 
+    // It's cleaner to keep the main generation logic separate as it runs once.
+
+    // ... handleSelection is above ...
+
+
+
     function handleSelection(elementId, categoryKey, dataList, valueKey = 'type', isPerk = false) {
         const el = document.getElementById(elementId);
         if (!el || !el.value) return null;
