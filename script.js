@@ -190,8 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Get all selector containers (parent of select)
         const allSelectors = [
             'age-select', 'body-select', 'spec-select', 'weapon-select', 'outfit-select', 'power-select',
-            'perk5-select', 'e-perk1-select', 'e-perk2-select', 'e-perk3-select', 'e-perk4-select',
-            'artifact-select', 'power2-select', 'extra-perk1-select', 'extra-perk2-select'
+            'e-perk1-select', 'e-perk2-select', 'e-perk3-select', 'e-perk4-select', 'perk5-select', 'extra-perk1-select', 'extra-perk2-select', 'artifact-select', 'power2-select'
         ];
 
         const allowed = originFields[origin] || [];
@@ -249,27 +248,25 @@ document.addEventListener('DOMContentLoaded', () => {
         createSelect('power-select', 'Power', data.power.map(p => ({ value: p.type, text: p.type })), 'cost-power', 'power', data.power);
         createSelect('power2-select', 'Second Power', data.power.map(p => ({ value: p.type, text: p.type })), 'cost-power2', 'power2', data.power);
 
-        const p5Opts = [
+        const allPerkOpts = [
             ...data.perks.combat.map(p => ({ value: `C-${p.roll}`, text: `(C) ${p.name}` })),
             ...data.perks.support.map(p => ({ value: `S-${p.roll}`, text: `(S) ${p.name}` }))
         ];
-        createSelect('perk5-select', 'Perk 5', p5Opts, 'cost-perk5', 'perk5', null, null); // Special handling in handler
+        createSelect('perk5-select', 'Perk 5', allPerkOpts, 'cost-perk5', 'perk5', null, null);
 
-        const combatPerks = data.perks.combat.filter(p => !p.name.includes('Artifact'));
-        const combatOpts = combatPerks.map(p => ({ value: p.roll, text: p.name }));
-        createSelect('e-perk1-select', 'Perk 1 (Combat)', combatOpts, 'cost-perk1', 'perk1', null);
-        createSelect('e-perk2-select', 'Perk 2 (Combat)', combatOpts, 'cost-perk2', 'perk2', null);
+        // Combat Perks (Default filter for initial, but now we allow all)
+        // actually for manual modification we want all options available.
+        createSelect('e-perk1-select', 'Perk 1 (Combat)', allPerkOpts, 'cost-perk1', 'perk1', null);
+        createSelect('e-perk2-select', 'Perk 2 (Combat)', allPerkOpts, 'cost-perk2', 'perk2', null);
 
-        const supportPerks = data.perks.support;
-        const supportOpts = supportPerks.map(p => ({ value: p.roll, text: p.name }));
-        createSelect('e-perk3-select', 'Perk 3 (Support)', supportOpts, 'cost-perk3', 'perk3', null);
-        createSelect('e-perk4-select', 'Perk 4 (Support)', supportOpts, 'cost-perk4', 'perk4', null);
+        createSelect('e-perk3-select', 'Perk 3 (Support)', allPerkOpts, 'cost-perk3', 'perk3', null);
+        createSelect('e-perk4-select', 'Perk 4 (Support)', allPerkOpts, 'cost-perk4', 'perk4', null);
 
-        createSelect('extra-perk1-select', 'Extra Perk 1', combatOpts, 'cost-extra1', 'extra-perk1', null);
-        createSelect('extra-perk2-select', 'Extra Perk 2', combatOpts, 'cost-extra2', 'extra-perk2', null);
+        createSelect('extra-perk1-select', 'Extra Perk 1', allPerkOpts, 'cost-extra1', 'extra-perk1', null);
+        createSelect('extra-perk2-select', 'Extra Perk 2', allPerkOpts, 'cost-extra2', 'extra-perk2', null);
 
         const artifactPerks = data.perks.combat.filter(p => p.name.includes('Artifact'));
-        const artifactOpts = artifactPerks.map(p => ({ value: p.roll, text: p.name }));
+        const artifactOpts = artifactPerks.map(p => ({ value: `C-${p.roll}`, text: p.name }));
         createSelect('artifact-select', 'Bonus Artifact', artifactOpts, 'cost-artifact', 'artifact', null);
     }
 
@@ -386,10 +383,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Determine Cost based on Rules
                 let originalRoll = parseInt(existingItem.roll);
 
-                if (isNaN(originalRoll)) {
-                    // We are editing a previously edited choice. Treat as Swap.
+                // Try to get precise original data
+                let baseRoll = originalRoll;
+                let baseTable = null;
+                if (existingItem.originalData) {
+                    baseRoll = existingItem.originalData.roll;
+                    baseTable = existingItem.originalData.table;
+                }
+
+                if (isNaN(originalRoll) && existingItem.originalData === undefined) {
+                    // Edited without history
                     costCurrency = 'silver';
                     costAmount = 1;
+
                     // Exception: Age Gold cost
                     if (categoryKey === 'age') {
                         const ageVal = parseInt(val);
@@ -405,7 +411,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (categoryKey === 'age') {
                         const ageVal = parseInt(val);
-                        const currentAgeRollAdjusted = originalRoll > 10 ? originalRoll - 10 : originalRoll;
+                        // Age logic... uses baseRoll (raw roll)
+                        // If we have originalData roll, use it. if not verify if originalRoll is valid
+                        // For age, originalRoll is usually the D20 roll not the age
+                        // Wait, existingItem.roll stores the D20 roll?
+                        // In getResult('age'), we return result string. We store `roll` in currentBuild as the random number.
+                        // So checkOverlap uses `originalRoll` correctly.
+
+                        const currentAgeRollAdjusted = baseRoll > 10 ? baseRoll - 10 : baseRoll;
                         const currentAge = 6 + currentAgeRollAdjusted;
 
                         if (Math.abs(ageVal - currentAge) <= 1) {
@@ -419,71 +432,99 @@ document.addEventListener('DOMContentLoaded', () => {
                             costAmount = 1;
                         }
                     }
-                    else if (categoryKey === 'body') {
-                        const targetItem = dataList.find(i => i.type === val);
-                        if (targetItem && checkOverlap(originalRoll, targetItem.roll, 2)) {
-                            costCurrency = 'bronze';
-                            costAmount = 1;
-                        }
-                    }
-                    else if (categoryKey === 'specialization') {
-                        const targetItem = dataList.find(i => i.type === val);
-                        if (targetItem && checkOverlap(originalRoll, targetItem.roll, 1)) {
-                            costCurrency = 'bronze';
-                            costAmount = 1;
-                        }
-                    }
-                    else if (categoryKey === 'weapon' || categoryKey === 'outfit') {
-                        const targetItem = dataList.find(i => i.type === val);
-                        if (targetItem && checkOverlap(originalRoll, targetItem.roll, 4)) {
-                            costCurrency = 'bronze';
-                            costAmount = 1;
-                        }
-                    }
-                    else if (categoryKey === 'power' || categoryKey === 'power2') {
-                        const targetItem = dataList.find(i => i.type === val);
-                        if (targetItem && checkOverlap(originalRoll, targetItem.roll, 2)) {
-                            costCurrency = 'bronze';
-                            costAmount = 1;
-                        }
-                    }
-                    else if (categoryKey === 'perk5') {
-                        const [table, rStr] = val.split('-');
-                        const r = parseInt(rStr);
-                        const currentCat = existingItem.category;
-                        const isCombat = currentCat.includes('Combat');
-                        const targetIsCombat = table === 'C';
+                    else if (categoryKey === 'body' || categoryKey === 'specialization' || categoryKey === 'weapon' || categoryKey === 'outfit' || categoryKey.includes('power')) {
+                        // Standard Range overlap logic
+                        let tolerance = 1;
+                        if (categoryKey === 'body' || categoryKey.includes('power')) tolerance = 2;
+                        if (categoryKey === 'weapon' || categoryKey === 'outfit') tolerance = 4;
 
-                        if (originalRoll === r && isCombat !== targetIsCombat) {
+                        const targetItem = dataList.find(i => i.type === val);
+                        if (targetItem && checkOverlap(baseRoll, targetItem.roll, tolerance)) {
                             costCurrency = 'bronze';
-                            costAmount = 1;
-                        } else {
-                            costCurrency = 'silver';
                             costAmount = 1;
                         }
                     }
                     else if (categoryKey.startsWith('perk') || categoryKey.startsWith('extra-perk') || categoryKey === 'artifact') {
-                        costCurrency = 'silver';
-                        costAmount = 1;
+                        // Perk Logic
+                        // Val format: "C-5" or "S-10"
+                        const [tableCode, rStr] = val.split('-');
+                        const targetRoll = parseInt(rStr);
+                        const targetTable = tableCode === 'C' ? 'combat' : 'support';
+
+                        // Infer baseTable if missing (legacy/fallback)
+                        if (!baseTable) {
+                            if (categoryKey.includes('Support')) baseTable = 'support';
+                            else if (categoryKey.includes('Combat')) baseTable = 'combat';
+                            else baseTable = 'combat'; // Default
+                        }
+
+                        if (targetTable === baseTable) {
+                            // Any on Same Table: 1 Silver
+                            costCurrency = 'silver';
+                            costAmount = 1;
+                        } else {
+                            // Opposite Table
+                            if (targetRoll === baseRoll) {
+                                // Same Num Opposite Table: 1 Bronze
+                                costCurrency = 'bronze';
+                                costAmount = 1;
+                            } else {
+                                // Any on Opposite Table: 1 Silver + 1 Bronze
+                                costCurrency = 'mixed-sb'; // Special flag
+                                costAmount = 1; // Logic handled below
+                            }
+                        }
                     }
                 }
             }
 
             // Pay
             if (previousCost.amount > 0) {
-                currentBuild.wallet[previousCost.type] += previousCost.amount;
+                // Refund previous
+                if (previousCost.type === 'mixed-sb') {
+                    currentBuild.wallet.silver += 1;
+                    currentBuild.wallet.bronze += 1;
+                } else {
+                    currentBuild.wallet[previousCost.type] += previousCost.amount;
+                }
             }
 
-            if (currentBuild.wallet[costCurrency] < costAmount) {
+            // Check Affordability
+            let affordable = false;
+            if (costCurrency === 'mixed-sb') {
+                if (currentBuild.wallet.silver >= 1 && currentBuild.wallet.bronze >= 1) affordable = true;
+            } else {
+                if (currentBuild.wallet[costCurrency] >= costAmount) affordable = true;
+            }
+
+            if (!affordable) {
+                // Revert Refund if failed
                 if (previousCost.amount > 0) {
-                    currentBuild.wallet[previousCost.type] -= previousCost.amount;
+                    if (previousCost.type === 'mixed-sb') {
+                        currentBuild.wallet.silver -= 1;
+                        currentBuild.wallet.bronze -= 1;
+                    } else {
+                        currentBuild.wallet[previousCost.type] -= previousCost.amount;
+                    }
                 }
-                alert(`Not enough ${costCurrency}! Cost: ${costAmount} ${costCurrency}`);
-                event.target.value = existingItem.rawName.includes('(Selected)') ? existingItem.rawName.replace(' (Selected)', '') : "";
+
+                let costMsg = costCurrency === 'mixed-sb' ? "1 Silver and 1 Bronze" : `${costAmount} ${costCurrency}`;
+                alert(`Not enough currency! Cost: ${costMsg}`);
+                event.target.value = existingItem.rawName.includes('(Selected)') ? existingItem.rawName.replace(' (Selected)', '') : ""; // Rough reset attempt or keep current?
+                // Actually if we fail, we should probably set the select back to what the item currently is.
+                // But matching value to current item is hard without store. 
+                // Just clear is safest or ignore.
+                // event.target.value = ""; 
                 return;
             }
 
-            currentBuild.wallet[costCurrency] -= costAmount;
+            // Deduct
+            if (costCurrency === 'mixed-sb') {
+                currentBuild.wallet.silver -= 1;
+                currentBuild.wallet.bronze -= 1;
+            } else {
+                currentBuild.wallet[costCurrency] -= costAmount;
+            }
 
             // Generate Manual Item Data
             let res = { result: "", stats: "", details: "" };
@@ -494,21 +535,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     stats: "",
                     details: "Immortal, no longer ages."
                 };
-            } else if (categoryKey === 'perk5') {
+            } else if (categoryKey.startsWith('perk') || categoryKey.startsWith('extra-perk') || categoryKey === 'artifact') {
                 const [table, r] = val.split('-');
                 const rollVal = parseInt(r);
                 const tableType = table === 'C' ? 'combat' : 'support';
                 const pData = getPerkResult(rollVal, tableType);
-                res = { ...pData, result: pData.result };
-
-            } else if (categoryKey === 'perk3' || categoryKey === 'perk4') {
-                const rollVal = parseInt(val);
-                const pData = getPerkResult(rollVal, 'support');
-                res = { ...pData, result: pData.result };
-
-            } else if (categoryKey.startsWith('perk') || categoryKey.startsWith('extra-perk') || categoryKey === 'artifact') {
-                const rollVal = parseInt(val);
-                const pData = getPerkResult(rollVal, 'combat');
                 res = { ...pData, result: pData.result };
 
             } else {
@@ -527,7 +558,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 stats: res.stats || "",
                 details: res.details || "",
                 rawName: res.result,
-                manualCost: { amount: costAmount, type: costCurrency }
+                manualCost: { amount: costAmount, type: costCurrency },
+                originalData: existingItem.originalData // Preserve original data
             };
         }
 
@@ -584,6 +616,12 @@ document.addEventListener('DOMContentLoaded', () => {
         setBadge('cost-weapon', 'weapon');
         setBadge('cost-outfit', 'outfit');
         setBadge('cost-power', 'power');
+        setBadge('cost-power2', 'power2');
+
+        setBadge('cost-perk3', 'perk3');
+        setBadge('cost-perk4', 'perk4');
+        setBadge('cost-extra1', 'extra-perk1');
+        setBadge('cost-extra2', 'extra-perk2');
 
         const perk5Free = isFree('perk5') || isFree('perk5-combat') || isFree('perk5-support');
         const p5Badge = document.getElementById('cost-perk5');
@@ -720,16 +758,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     let note = "";
 
                     if (seenPerks.has(res.result)) {
-                        res = getPerkResult(roll, 'support'); // Flip
-                        note = " (Duplicate -> Swapped)";
+                        res = getPerkResult(roll, 'support');
                         if (seenPerks.has(res.result)) {
                             res = { result: "Free Perk Choice", stats: "User Choice", details: "Select any perk manually.", isWildcard: true };
-                            note = " (Double Duplicate -> Free Choice)";
                         }
                     }
                     seenPerks.add(res.result);
 
-                    currentBuild.items.push({ category: label, roll: roll + note, result: res.result, stats: res.stats || "", details: res.details || "", rawName: res.result });
+                    currentBuild.items.push({
+                        category: label,
+                        roll: roll + note,
+                        result: res.result,
+                        stats: res.stats || "",
+                        details: res.details || "",
+                        rawName: res.result,
+                        originalData: { roll: roll, table: 'combat' }
+                    });
                     addResultRow(label, roll + note, res.result, res.stats || "", res.details || "");
                 }
             };
@@ -769,7 +813,8 @@ document.addEventListener('DOMContentLoaded', () => {
             result: res.result,
             stats: res.stats || "",
             details: res.details || "",
-            rawName: res.result
+            rawName: res.result,
+            originalData: { roll: roll, table: undefined } // table defined by typeOverride usually
         });
 
         addResultRow(label, roll, res.result, res.stats || "", res.details || "");
@@ -937,7 +982,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     result: res.result,
                     stats: res.stats || "",
                     details: res.details || "",
-                    rawName: res.result
+                    rawName: res.result,
+                    originalData: { roll: roll, table: type }
                 });
 
                 addResultRow(label, roll + note, res.result, res.stats || "", res.details || "");
@@ -1005,15 +1051,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (artMsg) {
                     process(null, 'Bonus Artifact', null, artMsg);
                 } else {
-                    // Random Artifact logic (Perk roll but name includes Artifact)
-                    // No, accidentalMahou.md says artifacts are specific entries.
-                    // Let's assume we filter for them.
-                    // ... Actually just assume regular handling or simplify.
-                    // "Artifact (+Free Artifact Perk)" from origin.
-                    // Let's roll until we get an artifact? Or just pick from list?
-                    // Quick hack: filter duplicate list logic for artifacts?
-                    // data.perks.combat has artifacts.
-                    // Simple random selection from ONLY artifacts to ensure we get one.
                     const artPerks = data.perks.combat.filter(p => p.name.includes("Artifact"));
                     const randArt = artPerks[Math.floor(Math.random() * artPerks.length)];
 
@@ -1209,7 +1246,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let text = "";
 
-        // Dice rolls
+        // Metadata
+        text += `Origin: ${currentBuild.origin}\n`;
         text += `Dice rolls: ${currentBuild.rolls.join(' ')}\n\n`;
 
         // Gender Logic
@@ -1233,7 +1271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         text += formatLine('Power');
 
         // Perks
-        const perks = currentBuild.items.filter(i => i.category.startsWith('Perk'));
+        const perks = currentBuild.items.filter(i => i.category.startsWith('Perk') || i.category.startsWith('Extra') || i.category.startsWith('Bonus'));
         perks.forEach(p => {
             let label = p.category;
             text += `${label}: ${p.result}`;
@@ -1279,5 +1317,283 @@ document.addEventListener('DOMContentLoaded', () => {
             <td title="${details}">${details}</td>
         `;
         resultsTableBody.appendChild(row);
+    }
+
+    // Text Import System
+    const importFile = document.getElementById('import-file');
+
+    if (importFile) {
+        importFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                try {
+                    processImportText(text);
+                    alert("Build text data loaded (approximated)!");
+                    e.target.value = ""; // Reset
+                } catch (err) {
+                    console.error(err);
+                    alert("Error parsing text file: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    function processImportText(text) {
+        // 1. Extract Origin
+        const originMatch = text.match(/Origin:\s*(\w+)/);
+        const origin = originMatch ? originMatch[1] : 'Contract'; // Default
+
+        // 2. Extract Rolls
+        const rollsMatch = text.match(/Dice rolls:\s*([\d\s]+)/);
+        const rolls = rollsMatch ? rollsMatch[1].trim().split(/\s+/).map(Number) : [];
+
+        // 3. Init Build
+        currentBuild = {
+            rolls: rolls,
+            items: [],
+            perk5Showing: 'combat',
+            purchasedStats: { STR: 0, AGI: 0, VIT: 0, MAG: 0, LCK: 0 },
+            wallet: { gold: 0, silver: 0, bronze: 0 },
+            origin: origin
+        };
+        upgradesPurchased = { power2: false, extras: false };
+        manualMode = false;
+
+        // Reset Wallet to Max for Origin
+        updateCosts(); // Sets wallet based on Origin
+
+        // 4. Parse Items from Text
+        const lines = text.split('\n');
+        const parseItem = (labelRegex, categoryKey, dataList, valueKey = 'type', rollIndex = -1) => {
+            const line = lines.find(l => labelRegex.test(l));
+            if (!line) return null;
+
+            // Extract Result
+            // Format: "Category: Result (Stats)"
+            // match: Category:\s*(ResultString)(\s*\(.*\))?
+            const match = line.match(/:\s*([^\(]+?)(?:\s*\(.*\))?$/);
+            if (!match) return null;
+
+            let val = match[1].trim();
+            // Clean up "(Selected)" if user manually pasted it or if we add it in future
+            val = val.replace(" (Selected)", "");
+
+            const catLabel = line.split(':')[0].trim();
+
+            const roll = (rollIndex >= 0 && rollIndex < rolls.length) ? rolls[rollIndex] : "-";
+
+            // Reconstruct Item Object
+            let newItem = {
+                category: catLabel,
+                roll: roll,
+                result: val,
+                stats: "", // We could parse from text, or fetch from data
+                details: "",
+                rawName: val
+            };
+
+            // Fetch metadata from Data to fill stats/details
+            if (dataList) {
+                const d = dataList.find(i => i[valueKey] == val || i.name == val); // name for perks
+                if (d) {
+                    newItem.stats = d.bonus || d.notes || "";
+                    newItem.details = d.description || d.examples || "";
+                }
+            } else if (categoryKey === 'age') {
+                // Age special
+            } else if (categoryKey.includes('perk') || categoryKey === 'artifact') {
+                // Try find in perks
+                let p = data.perks.combat.find(i => i.name === val);
+                if (!p) p = data.perks.support.find(i => i.name === val);
+                if (p) {
+                    newItem.stats = p.bonus || "";
+                    newItem.details = p.description || "";
+                }
+            }
+
+            currentBuild.items.push(newItem);
+
+            // Calculate Cost / Deduct from Wallet
+            if (rollIndex !== -1) {
+                // Check if Manual
+                // We need to compare Val with "Result of Roll"
+                let naturalRes = null;
+
+                if (categoryKey === 'age') {
+                    // Age Formula
+                    if (rolls[rollIndex] > 10) naturalRes = (6 + (rolls[rollIndex] - 10)) + " years old";
+                    else naturalRes = (6 + rolls[rollIndex]) + " years old";
+                }
+                else if (categoryKey === 'perk5') {
+                    // P5 is special, can be combat or support. 
+                    // Natural is Combat or Choice.
+                    // Assume Natural = Combat result of that roll.
+                    const rC = getPerkResult(rolls[rollIndex], 'combat');
+                    const rS = getPerkResult(rolls[rollIndex], 'support');
+                    if (val === rC.result || val === rS.result) naturalRes = val;
+                    else naturalRes = "___Mismatch___";
+                }
+                else if (categoryKey.includes('perk') || categoryKey === 'artifact') {
+                    // Determine table type
+                    let table = 'combat';
+                    if (catLabel.includes('Support')) table = 'support';
+                    // Natural
+                    const r = getPerkResult(rolls[rollIndex], table);
+                    naturalRes = r.result;
+                }
+                else {
+                    const nat = getResult(categoryKey, rolls[rollIndex]);
+                    if (nat) naturalRes = nat.result;
+                }
+
+                if (naturalRes && val !== naturalRes) {
+                    // Mismatch! Must calculate cost.
+                    // Simulate handleManualChange logic... simplified.
+                    // We call handleSelection logic logic?? No, that works on DOM elements.
+                    // We need basically the cost logic.
+
+                    // Assume Silver cost (1S) for generic swap
+                    // Check for bronze optimizations:
+
+                    let cost = { amount: 1, type: 'silver' };
+                    let baseRoll = rolls[rollIndex];
+
+                    if (categoryKey === 'age') {
+                        // ... simplified age cost check ...
+                        // For now just assume 1 Silver if diff, or Gold if crazy.
+                        const ageNum = parseInt(val);
+                        if (ageNum < 7 || ageNum > 16) cost = { amount: 1, type: 'gold' };
+                    }
+                    else if (categoryKey.includes('perk')) {
+                        // Check if same roll opposite table
+                        const pC = getPerkResult(baseRoll, 'combat');
+                        const pS = getPerkResult(baseRoll, 'support');
+                        if (val === pC.result || val === pS.result) {
+                            // It is one of the natural results for this number
+                            cost = { amount: 1, type: 'bronze' };
+                        } else {
+                            // Check if ANY same table -> 1S
+                            // Check if ANY opposite table -> 1S + 1B (Mixed)
+                            // This is hard without knowing the base table for sure.
+                            // Simplified: Just deduct 1 Silver.
+                        }
+                    }
+
+                    // Deduct
+                    if (currentBuild.wallet[cost.type] >= cost.amount) {
+                        currentBuild.wallet[cost.type] -= cost.amount;
+                        newItem.manualCost = cost;
+                    } else if (cost.type === 'gold' && currentBuild.wallet.gold < 1) {
+                        // Failed to pay? Just ignore or log error.
+                        console.warn("Could not pay for restored item", val);
+                    }
+                }
+            } else {
+                // No roll index (e.g. Extra Perks, Power 2)
+                // These are likely Upgrades (Gold cost) or free.
+                if (catLabel.includes('Extra Perk')) {
+                    upgradesPurchased.extras = true;
+                    // Cost was 1 Gold for the SET of 2 extra perks.
+                    // Only deduct once.
+                    // We can check `upgradesPurchased` flag logic?
+                    // Actually, we reset wallet at start. 
+                    // If we see Extra Perk 1, we assume bought.
+                }
+                if (catLabel.includes('Second Power') || (catLabel === 'Power' && currentBuild.items.filter(i => i.category === 'Power').length > 1)) {
+                    // This is vague. Usually Power 2 has label "Second Power".
+                    upgradesPurchased.power2 = true;
+                }
+            }
+        };
+
+        // Execution Order (matches Roll Indexes)
+        // 0: Age
+        parseItem(/Age:/, 'age', null, 'type', 0);
+        // 1: Body
+        parseItem(/Body:/, 'body', data.body, 'type', 1);
+        // 2: Spec
+        parseItem(/Speciali[sz]ation:/, 'specialization', data.specialization, 'type', 2);
+        // 3: Weapon
+        parseItem(/Weapon:/, 'weapon', data.weapon, 'type', 3);
+        // 4: Outfit
+        parseItem(/Outfit:/, 'outfit', data.outfit, 'type', 4);
+        // 5: Power
+        parseItem(/^Power:/, 'power', data.power, 'type', 5); // Start anchor to avoid Second Power
+
+        // Perks are tricky because manual selection might have changed names/orders?
+        // But usually labels are consistent: "Perk 1 (Combat)", etc.
+        parseItem(/Perk 1/, 'perk1', null, 'name', 6);
+        parseItem(/Perk 2/, 'perk2', null, 'name', 7);
+        parseItem(/Perk 3/, 'perk3', null, 'name', 8);
+        parseItem(/Perk 4/, 'perk4', null, 'name', 9);
+        parseItem(/Perk 5/, 'perk5', null, 'name', 10); // Choice
+
+        // Upgrades checks
+        // We scan parsed items for Upgrades
+        const textHasExtra = text.includes('Extra Perk');
+        if (textHasExtra) {
+            if (currentBuild.wallet.gold >= 1) {
+                currentBuild.wallet.gold -= 1;
+                upgradesPurchased.extras = true;
+            }
+            parseItem(/Extra Perk 1/, 'extra-perk1', null, 'name');
+            parseItem(/Extra Perk 2/, 'extra-perk2', null, 'name');
+        }
+
+        const hasPower2 = lines.some(l => l.startsWith('Second Power') || (l.startsWith('Power') && lines.indexOf(l) !== lines.findIndex(l2 => l2.startsWith('Power'))));
+        if (hasPower2) {
+            // Try to find the line
+            let p2Line = lines.find(l => l.startsWith('Second Power'));
+            if (p2Line) {
+                if (currentBuild.wallet.gold >= 1) {
+                    currentBuild.wallet.gold -= 1;
+                    upgradesPurchased.power2 = true;
+                }
+                parseItem(/Second Power:/, 'power2', data.power, 'type');
+            }
+        }
+
+        // Artifact
+        parseItem(/Bonus Artifact:/, 'artifact', null, 'name'); // Free if Origin Artifact
+
+        restoreBuildUI();
+    }
+
+    function restoreBuildUI() {
+        // Restore Origin Select
+        if (originTypeSelect) originTypeSelect.value = currentBuild.origin;
+
+        // Restore Unlock Button State
+        if (unlockOptionsBtn) {
+            unlockOptionsBtn.textContent = manualMode ? "Hide Options" : "Unlock All Options";
+            if (manualMode) {
+                unlockOptionsBtn.classList.remove('btn-secondary');
+                unlockOptionsBtn.classList.add('btn-primary');
+            } else {
+                unlockOptionsBtn.classList.add('btn-secondary');
+                unlockOptionsBtn.classList.remove('btn-primary');
+            }
+        }
+
+        // Restore Results Table
+        document.getElementById('results-body').innerHTML = "";
+        currentBuild.items.forEach(item => {
+            addResultRow(item.category, item.roll, item.result, item.stats, item.details);
+        });
+        resultsContainer.classList.remove('hidden');
+        exportBtn.classList.remove('hidden');
+
+        // Restore Stats
+        updateWalletUI(); // Including Upgrades UI
+        const { stats, flexible } = parseBonuses(currentBuild.items);
+        updateStatsDisplay(stats, flexible);
+
+        // Update Costs (Visibility and badges)
+        updateCosts();
     }
 });
