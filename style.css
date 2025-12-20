@@ -298,7 +298,8 @@ td {
     position: fixed;
     top: 2rem;
     right: 2rem;
-    width: 250px;
+    min-width: 250px;
+    width: auto;
     background: var(--glass-bg);
     backdrop-filter: blur(10px);
     border: 1px solid var(--glass-border);
@@ -309,6 +310,24 @@ td {
     z-index: 1000;
     font-size: 0.9rem;
     transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.stats-block {
+    margin-bottom: 1.5rem;
+}
+
+.stats-block:last-child {
+    margin-bottom: 0;
+}
+
+.stats-title {
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+    color: var(--accent-blue);
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 @media (max-width: 1400px) {
@@ -741,4 +760,57 @@ td {
     cursor: default;
     pointer-events: none;
     box-shadow: none;
+}
+
+/* Twin Soul Specific Styles */
+.stats-header-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 100px;
+    gap: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--secondary-color);
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.stats-row.twin-mode {
+    display: grid;
+    grid-template-columns: 80px 1fr 100px;
+    align-items: center;
+    gap: 10px;
+}
+
+.stats-row.twin-mode .stat-values {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.stats-row.twin-mode .stat-value {
+    width: 30px;
+    text-align: center;
+}
+
+.stats-row .stat-value.twin {
+    color: #ff00ff;
+    /* Purple for twin */
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+    .stats-header-row {
+        grid-template-columns: 60px 1fr 1fr 80px;
+    }
+
+    .stats-row.twin-mode {
+        grid-template-columns: 60px 1fr 80px;
+    }
 }

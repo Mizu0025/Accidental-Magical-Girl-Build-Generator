@@ -58,20 +58,43 @@
 
             <div id="results-container" class="hidden">
                 <button id="toggle-perk5-btn" class="hidden">Toggle Perk 5</button>
-                <table id="results-table">
-                    <thead>
-                        <tr>
-                            <th>Category</th>
-                            <th>Roll</th>
-                            <th>Result</th>
-                            <th>Stats</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody id="results-body">
-                        <!-- Results will be populated here -->
-                    </tbody>
-                </table>
+                <div class="table-wrapper">
+                    <table id="results-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Roll</th>
+                                <th>Result</th>
+                                <th>Stats</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body">
+                            <!-- Results will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="twin-results" class="hidden"
+                    style="margin-top: 20px; border-top: 2px dashed #4a90e2; padding-top: 20px;">
+                    <h3 style="text-align: center; color: #4a90e2; margin-bottom: 10px;">Twin Soul Build</h3>
+                    <div class="table-wrapper">
+                        <table id="twin-results-table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Roll</th>
+                                    <th>Result</th>
+                                    <th>Stats</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="twin-results-body">
+                                <!-- Twin results will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
     </div>

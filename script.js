@@ -129,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let isFree = rules.allFree || (rules.simple && rules.simple[categoryKey] !== undefined);
         if (categoryKey === 'perk5' && rules.simple && (rules.simple['perk5'] !== undefined || rules.simple['perk5-combat'] !== undefined || rules.simple['perk5-support'] !== undefined)) isFree = true;
         if (categoryKey === 'artifact' && origin === 'Artifact') isFree = true;
-
         // Find existing item index
         let lookupLabel = "";
         let isPerk = false;
@@ -158,6 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const existingItem = currentBuild.items[itemIndex];
+        if (existingItem.isWildcard) isFree = true;
+
         const previousCost = existingItem.manualCost || { amount: 0, type: 'silver' }; // Default format
 
         let newItem = null;
@@ -194,7 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 stats: res.stats || "",
                 details: res.details || "",
                 rawName: res.result,
-                manualCost: undefined
+                manualCost: undefined,
+                isWildcard: false
             };
 
         } else {
@@ -383,7 +385,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 details: res.details || "",
                 rawName: res.result,
                 manualCost: { amount: costAmount, type: costCurrency },
-                originalData: existingItem.originalData // Preserve original data
+                originalData: existingItem.originalData, // Preserve original data
+                isWildcard: existingItem.isWildcard || false
             };
         }
 
@@ -405,21 +408,71 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Sync Shared Items to Twin
+        const sharedCategories = {
+            'age': 'Age',
+            'body': 'Body',
+            'specialization': 'Specialization',
+            'power2': 'Second Power'
+        };
+
+        if (currentBuild.hasTwin && sharedCategories[categoryKey]) {
+            const twinCat = sharedCategories[categoryKey];
+            const twinItemIndex = currentBuild.twinItems.findIndex(i => i.category === twinCat);
+            if (twinItemIndex !== -1) {
+                currentBuild.twinItems[twinItemIndex] = { ...newItem, isShared: true };
+
+                const twinRows = document.querySelectorAll('#twin-results-body tr');
+                for (let row of twinRows) {
+                    const catCell = row.firstElementChild;
+                    if (catCell && catCell.textContent === twinCat) {
+                        row.innerHTML = `
+                            <td title="${twinCat}">${twinCat}</td>
+                            <td title="${newItem.roll}">${newItem.roll}</td>
+                            <td title="${newItem.result}">${newItem.result}</td>
+                            <td title="${newItem.stats}">${newItem.stats}</td>
+                            <td title="${newItem.details}">${newItem.details}</td>
+                         `;
+                        break;
+                    }
+                }
+            }
+        }
+
         updateWalletUI();
-        const { stats, flexible } = parseBonuses(currentBuild.items);
-        updateStatsDisplay(stats, flexible);
+        const { stats, flexible, twinStats } = parseBonuses(currentBuild.items, currentBuild, currentBuild.twinItems);
+        updateStatsDisplay(stats, flexible, twinStats);
     }
 
-    function updateCosts() {
+    function updateCosts(resetWallet = true) {
         const origin = originTypeSelect.value;
         const rules = originRules[origin];
 
         currentBuild.origin = origin;
-        currentBuild.wallet = { gold: rules.gold, silver: rules.silver, bronze: rules.bronze };
+        if (resetWallet) {
+            currentBuild.wallet = { gold: rules.gold, silver: rules.silver, bronze: rules.bronze };
+        }
 
         setFieldVisibility(origin);
 
-        const isFree = (key) => rules.allFree || (rules.simple && rules.simple[key] !== undefined);
+        const isFree = (key) => {
+            if (rules.allFree || (rules.simple && rules.simple[key] !== undefined)) return true;
+            if (key === 'artifact' && origin === 'Artifact') return true;
+
+            // Check for wildcard items in current build
+            const lookup = {
+                'age': 'Age', 'body': 'Body', 'specialization': 'Specialization',
+                'weapon': 'Weapon', 'outfit': 'Outfit', 'power': 'Power', 'power2': 'Second Power',
+                'perk1': 'Perk 1', 'perk2': 'Perk 2', 'perk3': 'Perk 3', 'perk4': 'Perk 4', 'perk5': 'Perk 5',
+                'extra-perk1': 'Extra Perk 1', 'extra-perk2': 'Extra Perk 2', 'artifact': 'Bonus Artifact'
+            };
+            const label = lookup[key];
+            if (label && currentBuild && currentBuild.items) {
+                const item = currentBuild.items.find(i => i.category.startsWith(label));
+                if (item && item.isWildcard) return true;
+            }
+            return false;
+        };
 
         const setBadge = (id, key) => {
             const el = document.getElementById(id);
@@ -496,7 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (unlockOptionsBtn) {
         unlockOptionsBtn.addEventListener('click', () => {
             manualMode = !manualMode;
-            updateCosts();
+            updateCosts(false);
         });
     }
 
@@ -558,7 +611,24 @@ document.addEventListener('DOMContentLoaded', () => {
             upgradesPurchased.power2 = true;
 
             const powMsg = handleSelection('power2-select', 'power2', data.power);
-            process('power', 'Second Power', null, powMsg);
+            const res = process('power', 'Second Power', null, powMsg);
+
+            if (res && res.result.includes('Twinned Soul') && !currentBuild.hasTwin) {
+                currentBuild.hasTwin = true;
+                generateTwinBuild();
+            } else if (currentBuild.hasTwin) {
+                // Mimic Second Power on twin as it is a gold coin choice
+                currentBuild.twinItems.push({
+                    category: 'Second Power',
+                    roll: res.roll,
+                    result: res.result,
+                    stats: res.stats || "",
+                    details: res.details || "",
+                    rawName: res.result,
+                    isShared: true
+                });
+                addResultRow('Second Power', res.roll, res.result, res.stats || "", res.details || "", true);
+            }
 
         } else if (type === 'extras' && !upgradesPurchased.extras) {
             currentBuild.wallet.gold--;
@@ -608,8 +678,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateWalletUI();
         updateCosts();
-        const { stats, flexible } = parseBonuses(currentBuild.items);
-        updateStatsDisplay(stats, flexible);
+        const { stats, flexible, twinStats } = parseBonuses(currentBuild.items, currentBuild, currentBuild.twinItems);
+        updateStatsDisplay(stats, flexible, twinStats);
     }
 
     const process = (category, label, typeOverride = null, manualResult = null) => {
@@ -644,6 +714,95 @@ document.addEventListener('DOMContentLoaded', () => {
         addResultRow(label, roll, res.result, res.stats || "", res.details || "");
         return res;
     };
+
+    function generateTwinBuild() {
+        const twinResults = document.getElementById('twin-results');
+        const twinBody = document.getElementById('twin-results-body');
+        if (!twinResults || !twinBody) return;
+
+        twinResults.classList.remove('hidden');
+        currentBuild.twinItems = [];
+        twinBody.innerHTML = ""; // Clear existing twin rows
+
+        // Shared: Age, Body, Specialisation
+        const share = (label) => {
+            const item = currentBuild.items.find(i => i.category === label);
+            if (!item) return;
+
+            currentBuild.twinItems.push({
+                category: label,
+                roll: item.roll,
+                result: item.result,
+                stats: item.stats || "",
+                details: item.details || "",
+                rawName: item.result,
+                isShared: true
+            });
+            addResultRow(label, item.roll, item.result, item.stats || "", item.details || "", true);
+        };
+
+        share('Age');
+        share('Body');
+        share('Specialization');
+
+        // New Rolls: Weapon, Outfit, Power
+        const rollNew = (label, category) => {
+            const roll = rollD20();
+            const res = getResult(category, roll);
+            currentBuild.twinItems.push({
+                category: label,
+                roll: roll,
+                result: res.result,
+                stats: res.stats || "",
+                details: res.details || "",
+                rawName: res.result
+            });
+            addResultRow(label, roll, res.result, res.stats || "", res.details || "", true);
+        };
+
+        rollNew('Weapon', 'weapon');
+        rollNew('Outfit', 'outfit');
+
+        // Twin Power Roll: Exclude Twinned Soul (to avoid infinite recursion/nonsense)
+        // Also ensure it doesn't feel like it "defaults" to tentacles
+        const tPowerRoll = rollD20();
+        let tPowerRes = getResult('power', tPowerRoll);
+        if (tPowerRes.result.includes('Twinned Soul')) {
+            // Re-roll once if it hits twin again
+            const tPowerRoll2 = rollD20();
+            tPowerRes = getResult('power', tPowerRoll2);
+        }
+
+        currentBuild.twinItems.push({
+            category: 'Power',
+            roll: tPowerRoll,
+            result: tPowerRes.result,
+            stats: tPowerRes.stats || "",
+            details: tPowerRes.details || "",
+            rawName: tPowerRes.result
+        });
+        addResultRow('Power', tPowerRoll, tPowerRes.result, tPowerRes.stats || "", tPowerRes.details || "", true);
+
+        // If user already has a second power, twin gets the same one
+        if (upgradesPurchased.power2) {
+            const p2 = currentBuild.items.find(i => i.category === 'Second Power');
+            if (p2) {
+                currentBuild.twinItems.push({
+                    category: 'Second Power',
+                    roll: p2.roll,
+                    result: p2.result,
+                    stats: p2.stats || "",
+                    details: p2.details || "",
+                    rawName: p2.result,
+                    isShared: true
+                });
+                addResultRow('Second Power', p2.roll, p2.result, p2.stats || "", p2.details || "", true);
+            }
+        }
+
+        // Perk Notice
+        addResultRow('Perks', '-', 'Same as Character', 'Shared', 'See character perks above.', true);
+    }
 
     // Helper: handlePerkGen logic reused? 
     // It's cleaner to keep the main generation logic separate as it runs once.
@@ -730,13 +889,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 items: [],
                 perk5Showing: 'combat',
                 purchasedStats: { STR: 0, AGI: 0, VIT: 0, MAG: 0, LCK: 0 },
+                userOnlyStats: { STR: 0, AGI: 0, VIT: 0, MAG: 0, LCK: 0 },
+                twinOnlyStats: { STR: 0, AGI: 0, VIT: 0, MAG: 0, LCK: 0 },
                 wallet: { gold: 0, silver: 0, bronze: 0 },
-                origin: originTypeSelect.value
+                origin: originTypeSelect.value,
+                hasTwin: false,
+                twinItems: []
             };
 
             // Note: Not clearing manual fields so they act as "locks" if populated
 
             document.getElementById('results-body').innerHTML = "";
+            document.getElementById('twin-results-body').innerHTML = "";
+            document.getElementById('twin-results').classList.add('hidden');
             document.getElementById('stats-content').innerHTML = "";
             document.getElementById('toggle-perk5-btn').classList.remove('hidden');
             resultsContainer.classList.remove('hidden');
@@ -760,6 +925,14 @@ document.addEventListener('DOMContentLoaded', () => {
             process('weapon', 'Weapon', null, weapMsg);
             process('outfit', 'Outfit', null, outMsg);
             process('power', 'Power', null, powMsg);
+
+            // Twinned Soul Check
+            const twinTrigger = currentBuild.items.some(i => i.result.includes('Twinned Soul'));
+            if (twinTrigger) {
+                currentBuild.hasTwin = true;
+                generateTwinBuild();
+            }
+
 
             // Perk Logic with Duplicates
             const seenPerks = new Set();
@@ -805,7 +978,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     stats: res.stats || "",
                     details: res.details || "",
                     rawName: res.result,
-                    originalData: { roll: roll, table: type }
+                    originalData: { roll: roll, table: type },
+                    isWildcard: res.isWildcard || false
                 });
 
                 addResultRow(label, roll + note, res.result, res.stats || "", res.details || "");
@@ -855,15 +1029,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     result: finalRes.result,
                     stats: finalRes.stats || "",
                     details: finalRes.details || "",
-                    rawName: finalRes.result
+                    rawName: finalRes.result,
+                    isWildcard: finalRes.isWildcard || false
                 });
                 addResultRow('Perk 5 (Choice)', roll, finalRes.result, finalRes.stats || "", finalRes.details || "");
 
                 currentBuild.perk5Showing = type;
 
                 // Populate alternates for toggle
-                currentBuild.perk5Combat = { category: 'Perk 5 (Combat)', roll: roll, result: resC.result, stats: resC.stats, details: resC.details, rawName: resC.result };
-                currentBuild.perk5Support = { category: 'Perk 5 (Support)', roll: roll, result: resS.result, stats: resS.stats, details: resS.details, rawName: resS.result };
+                currentBuild.perk5Combat = { category: 'Perk 5 (Combat)', roll: roll, result: resC.result, stats: resC.stats, details: resC.details, rawName: resC.result, isWildcard: finalRes.isWildcard };
+                currentBuild.perk5Support = { category: 'Perk 5 (Support)', roll: roll, result: resS.result, stats: resS.stats, details: resS.details, rawName: resS.result, isWildcard: finalRes.isWildcard };
             }
 
             // Artifact check
@@ -888,9 +1063,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const { stats, flexible } = parseBonuses(currentBuild.items);
-            updateStatsDisplay(stats, flexible);
+            const { stats, flexible, twinStats } = parseBonuses(currentBuild.items, currentBuild, currentBuild.twinItems);
+            updateStatsDisplay(stats, flexible, twinStats);
             updateWalletUI();
+            updateCosts(false); // Sync badges (like wildcards) without resetting wallet
 
             document.querySelector('.container').classList.add('expanded');
         });
@@ -945,23 +1121,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const { stats, flexible } = parseBonuses(currentBuild.items);
-        updateStatsDisplay(stats, flexible);
+        const { stats, flexible, twinStats } = parseBonuses(currentBuild.items, currentBuild, currentBuild.twinItems);
+        updateStatsDisplay(stats, flexible, twinStats);
     });
 
     // Handle Stat Purchase
-    window.purchaseStat = (stat, type) => {
+    window.purchaseStat = (stat, type, target = 'user') => {
         if (!currentBuild || !currentBuild.wallet) return;
 
         if (type === 'bronze') {
             if (currentBuild.wallet.bronze > 0) {
                 currentBuild.wallet.bronze--;
-                currentBuild.purchasedStats[stat] += 1;
+                if (target === 'twin') {
+                    currentBuild.twinOnlyStats[stat] += 1;
+                } else {
+                    currentBuild.userOnlyStats[stat] += 1;
+                }
             }
         } else if (type === 'silver') {
             if (currentBuild.wallet.silver > 0) {
                 currentBuild.wallet.silver--;
-                currentBuild.purchasedStats[stat] += 2;
+                if (currentBuild.hasTwin) {
+                    currentBuild.purchasedStats[stat] += 1;
+                } else {
+                    currentBuild.purchasedStats[stat] += 2;
+                }
             }
         } else if (type === 'gold') {
             if (currentBuild.wallet.gold > 0) {
@@ -971,86 +1155,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateWalletUI();
-        const { stats, flexible } = parseBonuses(currentBuild.items);
-        updateStatsDisplay(stats, flexible);
+        const { stats, flexible, twinStats } = parseBonuses(currentBuild.items, currentBuild, currentBuild.twinItems);
+        updateStatsDisplay(stats, flexible, twinStats);
     };
 
-    function parseBonuses(items) {
-        const stats = { STR: 4, AGI: 4, VIT: 4, MAG: 4, LCK: 4 };
-        const flexible = [];
 
-        items.forEach(item => {
-            if (!item.stats) return;
-
-            const parts = item.stats.split(',').map(s => s.trim());
-
-            parts.forEach(part => {
-                if (!part) return;
-
-                const isFlexible = /or|Any|one stat|Weapon Stat|Spec Stat|Outfit Stat/i.test(part);
-
-                if (isFlexible) {
-                    flexible.push(`${part} (${item.category})`);
-                } else {
-                    if (part.toLowerCase().includes("all stats")) {
-                        const match = part.match(/([+-]?\d+)/);
-                        if (match) {
-                            const val = parseInt(match[1], 10);
-                            ['STR', 'AGI', 'VIT', 'MAG', 'LCK'].forEach(s => stats[s] += val);
-                        }
-                    } else {
-                        const match = part.match(/([+-]?\d+)\s+(STR|AGI|VIT|MAG|LCK)/);
-                        if (match) {
-                            const val = parseInt(match[1], 10);
-                            const stat = match[2];
-                            if (stats[stat] !== undefined) {
-                                stats[stat] += val;
-                            }
-                        }
-                    }
-                }
-            });
-        });
-
-
-        // Add purchased stats
-        if (currentBuild.purchasedStats) {
-            for (const [key, val] of Object.entries(currentBuild.purchasedStats)) {
-                if (stats[key] !== undefined) {
-                    stats[key] += val;
-                }
-            }
-        }
-
-        // Add Origin Bonus Stats
-        const origin = currentBuild.origin;
-        if (origin === 'Weapon') {
-            flexible.push('+1 Weapon Stat (Origin Bonus)');
-        } else if (origin === 'Bloodline') {
-            flexible.push('+1 Specialisation Stat (Origin Bonus)');
-        }
-
-        return { stats, flexible };
-    }
-
-    function updateStatsDisplay(stats, flexible) {
+    function updateStatsDisplay(stats, flexible, twinStats = null) {
         const statsDisplay = document.getElementById('stats-display');
         const statsContent = document.getElementById('stats-content');
         if (!statsDisplay || !statsContent) return;
 
         let html = '';
+
+        // User Block
+        html += `<div class=\"stats-block\"><h3 class=\"stats-title\">User Stats</h3>`;
         for (const [key, value] of Object.entries(stats)) {
             html += `
                 <div class="stats-row">
                     <span class="stat-name">${key}</span>
                     <div class="stat-controls">
                         <span class="stat-value">${value}</span>
-                        <button class="btn-stat bronze" onclick="purchaseStat('${key}', 'bronze')" title="Spend 1 Bronze (+1)">+B</button>
-                        <button class="btn-stat silver" onclick="purchaseStat('${key}', 'silver')" title="Spend 1 Silver (+2)">+S</button>
-                        <button class="btn-stat gold" onclick="purchaseStat('${key}', 'gold')" title="Spend 1 Gold (+4)">+4</button>
+                        <button class="btn-stat bronze" onclick="purchaseStat('${key}', 'bronze', 'user')" title="Spend 1 Bronze (+1 User)">+B</button>
+                        <button class="btn-stat silver" onclick="purchaseStat('${key}', 'silver', 'user')" title="Spend 1 Silver (${twinStats ? '+1 Both' : '+2 User'})">+S</button>
+                        <button class="btn-stat gold" onclick="purchaseStat('${key}', 'gold', 'user')" title="Spend 1 Gold (+4 Both)">+G</button>
                     </div>
                 </div>
             `;
+        }
+        html += `</div>`;
+
+        // Twin Block
+        if (twinStats) {
+            html += `<div class=\"stats-block\"><h3 class=\"stats-title\">Twin Stats</h3>`;
+            for (const [key, value] of Object.entries(twinStats)) {
+                html += `
+                    <div class="stats-row">
+                        <span class="stat-name">${key}</span>
+                        <div class="stat-controls">
+                            <span class="stat-value">${value}</span>
+                            <button class="btn-stat bronze" onclick="purchaseStat('${key}', 'bronze', 'twin')" title="Spend 1 Bronze (+1 Twin)">+B</button>
+                            <button class="btn-stat silver" onclick="purchaseStat('${key}', 'silver', 'twin')" title="Spend 1 Silver (+1 Both)">+S</button>
+                            <button class="btn-stat gold" onclick="purchaseStat('${key}', 'gold', 'twin')" title="Spend 1 Gold (+4 Both)">+G</button>
+                        </div>
+                    </div>
+                `;
+            }
+            html += `</div>`;
         }
 
         if (flexible.length > 0) {
@@ -1102,14 +1252,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Stat Block
-        const { stats, flexible } = parseBonuses(currentBuild.items);
+        const { stats, flexible, twinStats } = parseBonuses(currentBuild.items, currentBuild, currentBuild.twinItems);
 
         text += `\n[Stat Block]\n`;
-        text += `STR: ${stats.STR}\n`;
-        text += `AGI: ${stats.AGI}\n`;
-        text += `VIT: ${stats.VIT}\n`;
-        text += `MAG: ${stats.MAG}\n`;
-        text += `LCK: ${stats.LCK}\n`;
+        if (twinStats) {
+            text += `         User | Twin\n`;
+            text += `STR:      ${stats.STR} | ${twinStats.STR}\n`;
+            text += `AGI:      ${stats.AGI} | ${twinStats.AGI}\n`;
+            text += `VIT:      ${stats.VIT} | ${twinStats.VIT}\n`;
+            text += `MAG:      ${stats.MAG} | ${twinStats.MAG}\n`;
+            text += `LCK:      ${stats.LCK} | ${twinStats.LCK}\n`;
+        } else {
+            text += `STR: ${stats.STR}\n`;
+            text += `AGI: ${stats.AGI}\n`;
+            text += `VIT: ${stats.VIT}\n`;
+            text += `MAG: ${stats.MAG}\n`;
+            text += `LCK: ${stats.LCK}\n`;
+        }
+
+        if (currentBuild.hasTwin) {
+            text += `\n[Twin Soul Build]\n`;
+            currentBuild.twinItems.forEach(item => {
+                text += `${item.category}: ${item.result}`;
+                if (item.stats) text += ` (${item.stats})`;
+                text += `\n`;
+            });
+            text += `Perks: Shared with Primary\n`;
+        }
 
         if (flexible.length > 0) {
             text += `\nFlexible Bonuses:\n`;
@@ -1129,7 +1298,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    function addResultRow(category, roll, result, stats, details) {
+    function addResultRow(category, roll, result, stats, details, isTwin = false) {
+        const bodyId = isTwin ? 'twin-results-body' : 'results-body';
+        const tbody = document.getElementById(bodyId);
+        if (!tbody) return;
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td title="${category}">${category}</td>
@@ -1138,7 +1311,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td title="${stats}">${stats}</td>
             <td title="${details}">${details}</td>
         `;
-        resultsTableBody.appendChild(row);
+        tbody.appendChild(row);
     }
 
     // Text Import System
@@ -1180,8 +1353,12 @@ document.addEventListener('DOMContentLoaded', () => {
             items: [],
             perk5Showing: 'combat',
             purchasedStats: { STR: 0, AGI: 0, VIT: 0, MAG: 0, LCK: 0 },
+            userOnlyStats: { STR: 0, AGI: 0, VIT: 0, MAG: 0, LCK: 0 },
+            twinOnlyStats: { STR: 0, AGI: 0, VIT: 0, MAG: 0, LCK: 0 },
             wallet: { gold: 0, silver: 0, bronze: 0 },
-            origin: origin
+            origin: origin,
+            hasTwin: false,
+            twinItems: []
         };
         upgradesPurchased = { power2: false, extras: false };
         manualMode = false;
@@ -1383,6 +1560,55 @@ document.addEventListener('DOMContentLoaded', () => {
         // Artifact
         parseItem(/Bonus Artifact:/, 'artifact', null, 'name'); // Free if Origin Artifact
 
+        // Twinned Soul Check
+        const hasTwin = currentBuild.items.some(i => i.result.includes('Twinned Soul'));
+        if (hasTwin) {
+            currentBuild.hasTwin = true;
+            // Try to parse Twin Build section
+            const twinSectionIndex = text.indexOf('[Twin Soul Build]');
+            if (twinSectionIndex !== -1) {
+                const twinPart = text.substring(twinSectionIndex);
+                const twinLines = twinPart.split('\n');
+
+                const parseTwinItem = (labelRegex, categoryKey, dataList, valueKey = 'type') => {
+                    const line = twinLines.find(l => labelRegex.test(l));
+                    if (!line) return;
+                    const match = line.match(/:\s*([^\(]+?)(?:\s*\(.*\))?$/);
+                    if (!match) return;
+                    let val = match[1].trim();
+                    const catLabel = line.split(':')[0].trim();
+
+                    let newItem = {
+                        category: catLabel,
+                        roll: "-",
+                        result: val,
+                        stats: "",
+                        details: "",
+                        rawName: val
+                    };
+                    if (dataList) {
+                        const d = dataList.find(i => i[valueKey] == val || i.name == val);
+                        if (d) {
+                            newItem.stats = d.bonus || d.notes || "";
+                            newItem.details = d.description || d.examples || "";
+                        }
+                    }
+                    currentBuild.twinItems.push(newItem);
+                };
+
+                parseTwinItem(/Age:/, 'age', null);
+                parseTwinItem(/Body:/, 'body', data.body);
+                parseTwinItem(/Speciali[sz]ation:/, 'specialization', data.specialization);
+                parseTwinItem(/Weapon:/, 'weapon', data.weapon);
+                parseTwinItem(/Outfit:/, 'outfit', data.outfit);
+                parseTwinItem(/^Power:/, 'power', data.power);
+                parseTwinItem(/Second Power:/, 'power2', data.power);
+            } else {
+                // Not in text? Generate new one if missing
+                generateTwinBuild();
+            }
+        }
+
         restoreBuildUI();
     }
 
@@ -1404,18 +1630,98 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Restore Results Table
         document.getElementById('results-body').innerHTML = "";
+        document.getElementById('twin-results-body').innerHTML = "";
         currentBuild.items.forEach(item => {
             addResultRow(item.category, item.roll, item.result, item.stats, item.details);
         });
+
+        if (currentBuild.hasTwin) {
+            document.getElementById('twin-results').classList.remove('hidden');
+            currentBuild.twinItems.forEach(item => {
+                addResultRow(item.category, item.roll, item.result, item.stats, item.details, true);
+            });
+            addResultRow('Perks', '-', 'Same as Character', 'Shared', 'See character perks above.', true);
+        } else {
+            document.getElementById('twin-results').classList.add('hidden');
+        }
+
         resultsContainer.classList.remove('hidden');
         exportBtn.classList.remove('hidden');
 
         // Restore Stats
         updateWalletUI(); // Including Upgrades UI
-        const { stats, flexible } = parseBonuses(currentBuild.items);
-        updateStatsDisplay(stats, flexible);
+        const { stats, flexible, twinStats } = parseBonuses(currentBuild.items, currentBuild, currentBuild.twinItems);
+        updateStatsDisplay(stats, flexible, twinStats);
 
         // Update Costs (Visibility and badges)
-        updateCosts();
+        updateCosts(false);
     }
 });
+
+export function parseBonuses(items, currentBuild, twinItems = []) {
+    const calculateStats = (itemList, purchased, onlyUser = null) => {
+        const st = { STR: 4, AGI: 4, VIT: 4, MAG: 4, LCK: 4 };
+        const fl = [];
+
+        itemList.forEach(item => {
+            if (!item.stats) return;
+            const parts = item.stats.split(',').map(s => s.trim());
+            parts.forEach(part => {
+                if (!part) return;
+                const isFlexible = /or|Any|one stat|Weapon Stat|Spec Stat|Outfit Stat/i.test(part);
+                if (isFlexible) {
+                    fl.push(`${part} (${item.category})`);
+                } else {
+                    if (part.toLowerCase().includes("all stats")) {
+                        const match = part.match(/([+-]?\d+)/);
+                        if (match) {
+                            const val = parseInt(match[1], 10);
+                            ['STR', 'AGI', 'VIT', 'MAG', 'LCK'].forEach(s => st[s] += val);
+                        }
+                    } else {
+                        const match = part.match(/([+-]?\d+)\s+(STR|AGI|VIT|MAG|LCK)/);
+                        if (match) {
+                            const val = parseInt(match[1], 10);
+                            const stat = match[2];
+                            if (st[stat] !== undefined) st[stat] += val;
+                        }
+                    }
+                }
+            });
+        });
+
+        // Add purchased stats
+        if (purchased) {
+            for (const [key, val] of Object.entries(purchased)) {
+                if (st[key] !== undefined) st[key] += val;
+            }
+        }
+        if (onlyUser) {
+            for (const [key, val] of Object.entries(onlyUser)) {
+                if (st[key] !== undefined) st[key] += val;
+            }
+        }
+        return { st, fl };
+    };
+
+    const userRes = calculateStats(items, currentBuild.purchasedStats, currentBuild.userOnlyStats);
+
+    // Add Origin Bonus Stats for User
+    const origin = currentBuild.origin;
+    if (origin === 'Weapon') userRes.fl.push('+1 Weapon Stat (Origin Bonus)');
+    else if (origin === 'Bloodline') userRes.fl.push('+1 Specialisation Stat (Origin Bonus)');
+
+    let twinRes = null;
+    if (currentBuild.hasTwin) {
+        // Twin shares perks with user
+        const perks = items.filter(i => i.category.startsWith('Perk') || i.category.startsWith('Extra') || i.category.startsWith('Bonus'));
+        const fullTwinItems = [...twinItems, ...perks];
+        twinRes = calculateStats(fullTwinItems, currentBuild.purchasedStats, currentBuild.twinOnlyStats);
+    }
+
+    return {
+        stats: userRes.st,
+        flexible: userRes.fl,
+        twinStats: twinRes ? twinRes.st : null
+    };
+}
