@@ -1656,6 +1656,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update Costs (Visibility and badges)
         updateCosts(false);
     }
+
+    const statsHeader = document.getElementById('stats-header');
+    const statsContent = document.getElementById('stats-content');
+    const statsToggleIcon = document.getElementById('stats-toggle-icon');
+
+    if (statsHeader && statsContent && statsToggleIcon) {
+        statsHeader.addEventListener('click', () => {
+            statsContent.classList.toggle('collapsed');
+            if (statsContent.classList.contains('collapsed')) {
+                statsToggleIcon.textContent = '▲';
+            } else {
+                statsToggleIcon.textContent = '▼';
+            }
+        });
+    }
 });
 
 export function parseBonuses(items, currentBuild, twinItems = []) {

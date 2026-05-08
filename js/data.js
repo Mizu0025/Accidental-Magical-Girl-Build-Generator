@@ -99,7 +99,7 @@ export const data = {
 };
 
 export const originRules = {
-    'Contract': { gold: 1, silver: 3, bronze: 4, simple: { 'outfit': 0, 'perk5-combat': 0, 'perk5-support': 0 } },
+    'Contract': { gold: 1, silver: 3, bronze: 4, simple: { 'outfit': 0 } },
     'Smug': { gold: 0, silver: 2, bronze: 3, allFree: true },
     'Weapon': { gold: 1, silver: 3, bronze: 4, simple: { 'weapon': 0 }, bonusStat: 'Weapon' },
     'Bloodline': { gold: 1, silver: 3, bronze: 4, simple: { 'specialization': 0 }, bonusStat: 'Specialisation' },
@@ -109,7 +109,7 @@ export const originRules = {
 };
 
 export const originFields = {
-    'Contract': ['outfit-select', 'perk5-select'],
+    'Contract': ['outfit-select'],
     'Smug': ['age-select', 'body-select', 'spec-select', 'weapon-select', 'outfit-select', 'power-select', 'perk5-select'],
     'Weapon': ['weapon-select'],
     'Bloodline': ['spec-select'],

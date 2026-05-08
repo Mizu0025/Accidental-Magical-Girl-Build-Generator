@@ -21,7 +21,7 @@
                     <label for="origin-type">Select Origin:</label>
                     <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
                         <select id="origin-type">
-                            <option value="Contract">Contract (Free Perk 5 & Outfit)</option>
+                            <option value="Contract">Contract (Free Outfit)</option>
                             <option value="Smug">Smug (Free Choice, Less Coins)</option>
                             <option value="Weapon">Weapon (+1 Weapon Stat, Free Weapon)</option>
                             <option value="Bloodline">Bloodline (+1 Spec Stat, Free Spec)</option>
@@ -100,7 +100,11 @@
     </div>
 
     <div id="stats-display" class="stats-panel hidden">
-        <h3>Current Stats</h3>
+        <h3 id="stats-header"
+            style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+            Current Stats
+            <span id="stats-toggle-icon">▼</span>
+        </h3>
         <div id="stats-content"></div>
     </div>
 
