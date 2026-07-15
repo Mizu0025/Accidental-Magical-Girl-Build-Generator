@@ -1,54 +1,54 @@
 export const data = {
     body: [
-        { range: [1, 6], type: "Underdeveloped", description: "Smaller, sickly, thin, or much younger looking.", bonus: "+1 LCK or MAG" },
-        { range: [7, 14], type: "Average", description: "Average for your age. No standout features.", bonus: "+1 AGI or VIT" },
-        { range: [15, 20], type: "Overdeveloped", description: "Taller, bigger, wider, more muscular, appears older or has precocious puberty.", bonus: "+1 STR or VIT" }
+        { max: 6, name: "Underdeveloped", description: "Smaller, sickly, thin, or much younger looking.", bonus: "+1 LCK or MAG" },
+        { max: 14, name: "Average", description: "Average for your age. No standout features.", bonus: "+1 AGI or VIT" },
+        { max: 20, name: "Overdeveloped", description: "Taller, bigger, wider, more muscular, appears older or has precocious puberty.", bonus: "+1 STR or VIT" }
     ],
-    specialization: [
-        { roll: 1, type: "Fire", description: "Can magically create fire.", bonus: "+3 STR or MAG" },
-        { roll: 2, type: "Ice", description: "Can magically create ice.", bonus: "+2 STR or MAG, +1 VIT" },
-        { roll: 3, type: "Air", description: "Can magically control air.", bonus: "+4 AGI" },
-        { roll: 4, type: "Spirit", description: "Can magically create spirit.", bonus: "+2 MAG, +1 MAG or LCK, +2 LCK" },
-        { roll: 5, type: "Reinforcement", description: "Can magically reinforce yourself and others, alongside healing injuries.", bonus: "+1 STR, +1 AGI, +1 MAG, +1 LCK" },
-        { roll: 6, type: "Psychic", description: "Can magically read minds and mentally manipulate people.", bonus: "+2 MAG, +2 LCK" },
-        { roll: 7, type: "Time", description: "Can magically control time.", bonus: "+1 AGI or VIT, +2 LCK" },
-        { roll: 8, type: "Lightning", description: "Can magically create lightning.", bonus: "+1 STR or MAG, +2 AGI" },
-        { roll: 9, type: "Sound", description: "Can magically create sound.", bonus: "+1 AGI, +2 MAG, +1 LCK" },
-        { roll: 10, type: "Darkness", description: "Can magically create darkness.", bonus: "+2 STR or MAG, +1 VIT" },
-        { roll: 11, type: "Illusion", description: "Can magically create illusions.", bonus: "+2 STR, +1 VIT, +1 LCK" },
-        { roll: 12, type: "Light", description: "Can magically control and generate light.", bonus: "+1 AGI, +2 VIT, +1 MAG" },
-        { roll: 13, type: "Wood", description: "Can magically create wood.", bonus: "+1 STR, +1 VIT, +2 MAG" },
-        { roll: 14, type: "Empathic", description: "Empowered by emotions of those around you, can store it for later use. Emotion type determines which specialisation you mimic while reserves last.", bonus: "+1 STR or MAG, +2 LCK" },
-        { roll: 15, type: "Water", description: "Can magically control and generate water.", bonus: "+1 STR, +2 AGI, +1 MAG" },
-        { roll: 16, type: "Gravity", description: "Can magically control gravity.", bonus: "+4 MAG" },
-        { roll: 17, type: "Stone", description: "Can magically create and control stone.", bonus: "+3 STR or VIT" },
-        { roll: 18, type: "Beast", description: "Can magically summon and enhance animals; can also enhance yourself.", bonus: "+1 STR, +1 AGI, +1 VIT or LCK" },
-        { roll: 19, type: "Metal", description: "Can magically control and generate metal.", bonus: "+3 STR or LCK" },
-        { roll: 20, type: "Oddball", description: "Narrowly focused, but useful command of some element or concept (eg; candy, bone, paper, fairy tales).", bonus: "+2 to one stat, +1 to one other stat" }
+    specialisation: [
+        { roll: 1, name: "Fire", description: "Can magically create fire.", bonus: "+3 STR or MAG" },
+        { roll: 2, name: "Ice", description: "Can magically create ice.", bonus: "+2 STR or MAG, +1 VIT" },
+        { roll: 3, name: "Air", description: "Can magically control air.", bonus: "+4 AGI" },
+        { roll: 4, name: "Spirit", description: "Can magically create spirit.", bonus: "+2 MAG, +1 MAG or LCK, +2 LCK" },
+        { roll: 5, name: "Reinforcement", description: "Can magically reinforce yourself and others, alongside healing injuries.", bonus: "+1 STR, +1 AGI, +1 MAG, +1 LCK" },
+        { roll: 6, name: "Psychic", description: "Can magically read minds and mentally manipulate people.", bonus: "+2 MAG, +2 LCK" },
+        { roll: 7, name: "Time", description: "Can magically control time.", bonus: "+1 AGI or VIT, +2 LCK" },
+        { roll: 8, name: "Lightning", description: "Can magically create lightning.", bonus: "+1 STR or MAG, +2 AGI" },
+        { roll: 9, name: "Sound", description: "Can magically create sound.", bonus: "+1 AGI, +2 MAG, +1 LCK" },
+        { roll: 10, name: "Darkness", description: "Can magically create darkness.", bonus: "+2 STR or MAG, +1 VIT" },
+        { roll: 11, name: "Illusion", description: "Can magically create illusions.", bonus: "+2 STR, +1 VIT, +1 LCK" },
+        { roll: 12, name: "Light", description: "Can magically control and generate light.", bonus: "+1 AGI, +2 VIT, +1 MAG" },
+        { roll: 13, name: "Wood", description: "Can magically create wood.", bonus: "+1 STR, +1 VIT, +2 MAG" },
+        { roll: 14, name: "Empathic", description: "Empowered by emotions of those around you, can store it for later use. Emotion name determines which specialisation you mimic while reserves last.", bonus: "+1 STR or MAG, +2 LCK" },
+        { roll: 15, name: "Water", description: "Can magically control and generate water.", bonus: "+1 STR, +2 AGI, +1 MAG" },
+        { roll: 16, name: "Gravity", description: "Can magically control gravity.", bonus: "+4 MAG" },
+        { roll: 17, name: "Stone", description: "Can magically create and control stone.", bonus: "+3 STR or VIT" },
+        { roll: 18, name: "Beast", description: "Can magically summon and enhance animals; can also enhance yourself.", bonus: "+1 STR, +1 AGI, +1 VIT or LCK" },
+        { roll: 19, name: "Metal", description: "Can magically control and generate metal.", bonus: "+3 STR or LCK" },
+        { roll: 20, name: "Oddball", description: "Narrowly focused, but useful command of some element or concept (eg; candy, bone, paper, fairy tales).", bonus: "+2 to one stat, +1 to one other stat" }
     ],
     weapon: [
-        { range: [1, 5], type: "Melee", examples: "Blades, hammers, axes, polearms...", bonus: "+1 STR, +1 VIT" },
-        { range: [6, 10], type: "Ranged", examples: "Bows, rifles, slingshots...", bonus: "+1 AGI" },
-        { range: [11, 15], type: "Mystic", examples: "Rods, staves, orbs, wands...", bonus: "+1 MAG" },
-        { range: [16, 20], type: "Fist", examples: "Gauntlets, boots, fists...", bonus: "+2 STR" }
+        { max: 5, name: "Melee", description: "Blades, hammers, axes, polearms...", bonus: "+1 STR, +1 VIT" },
+        { max: 10, name: "Ranged", description: "Bows, rifles, slingshots...", bonus: "+1 AGI" },
+        { max: 15, name: "Mystic", description: "Rods, staves, orbs, wands...", bonus: "+1 MAG" },
+        { max: 20, name: "Fist", description: "Gauntlets, boots, fists...", bonus: "+2 STR" }
     ],
     outfit: [
-        { range: [1, 5], type: "Skimpy", description: "Skintight, leotards, bikinis...", bonus: "+1 AGI" },
-        { range: [6, 10], type: "Flowing", description: "Coats, robes, capes, togas...", bonus: "+1 STR" },
-        { range: [11, 15], type: "Elaborate", description: "Dresses, fancy cosplay, gowns...", bonus: "+1 MAG" },
-        { range: [16, 20], type: "Uniform", description: "School/military uniforms, business...", bonus: "+1 VIT" }
+        { max: 5, name: "Skimpy", description: "Skintight, leotards, bikinis...", bonus: "+1 AGI" },
+        { max: 10, name: "Flowing", description: "Coats, robes, capes, togas...", bonus: "+1 STR" },
+        { max: 15, name: "Elaborate", description: "Dresses, fancy cosplay, gowns...", bonus: "+1 MAG" },
+        { max: 20, name: "Uniform", description: "School/military uniforms, business...", bonus: "+1 VIT" }
     ],
     power: [
-        { range: [1, 2], type: "Killing Blow", description: "Overwhelming single attack.", notes: "+1 STR or MAG" },
-        { range: [3, 4], type: "Hammerspace", description: "Extra-dimensional storage.", notes: "Stores non-living material." },
-        { range: [5, 6], type: "Twinned Soul", description: "Splits soul into two bodies.", bonus: "-1 all stats", notes: "Share stats/perks. -1 all stats." },
-        { range: [7, 8], type: "Focused Assault", description: "Punishing blows on single enemy.", notes: "Melee or Ranged form." },
-        { range: [9, 10], type: "Barrage", description: "Rapid succession attacks.", notes: "Good vs hordes." },
-        { range: [11, 12], type: "Power of Friendship", description: "Instinctive social skills.", notes: "Allies easily." },
-        { range: [13, 14], type: "Duplication", description: "Create solid duplicates.", notes: "Can merge to relay XP." },
-        { range: [15, 16], type: "Third Eye", description: "See magic flows.", notes: "Predict spells." },
-        { range: [17, 18], type: "Regeneration", description: "Heal & recover fast.", notes: "Reattach limbs." },
-        { range: [19, 20], type: "Tentacles", description: "Command tentacle-like appendages.", notes: "Simple minds." }
+        { max: 2, name: "Killing Blow", description: "Overwhelming single attack.", notes: "+1 STR or MAG" },
+        { max: 4, name: "Hammerspace", description: "Extra-dimensional storage.", notes: "Stores non-living material." },
+        { max: 6, name: "Twinned Soul", description: "Splits soul into two bodies.", bonus: "-1 all stats", notes: "Share stats/perks. -1 all stats." },
+        { max: 8, name: "Focused Assault", description: "Punishing blows on single enemy.", notes: "Melee or Ranged form." },
+        { max: 10, name: "Barrage", description: "Rapid succession attacks.", notes: "Good vs hordes." },
+        { max: 12, name: "Power of Friendship", description: "Instinctive social skills.", notes: "Allies easily." },
+        { max: 14, name: "Duplication", description: "Create solid duplicates.", notes: "Can merge to relay XP." },
+        { max: 16, name: "Third Eye", description: "See magic flows.", notes: "Predict spells." },
+        { max: 18, name: "Regeneration", description: "Heal & recover fast.", notes: "Reattach limbs." },
+        { max: 20, name: "Tentacles", description: "Command tentacle-like appendages.", notes: "Simple minds." }
     ],
     perks: {
         combat: [

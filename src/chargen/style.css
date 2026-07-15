@@ -1,0 +1,87 @@
+/* Center the table layout on the page */
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  background-color: #f8fafc; /* Soft, light background */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Container wrapper if you want padding around the table */
+.table-container {
+  width: 100%;
+  max-width: 800px;
+  padding: 20px;
+}
+
+/* Main Table Styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden; /* Ensures the border-radius applies to corners */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  table-layout: fixed;
+}
+
+th:nth-child(1) {
+  width: 25%; /* Category column */
+}
+
+th:nth-child(2) {
+  width: 60%; /* Result column (gets the most space for descriptions) */
+}
+
+th:nth-child(3) {
+  width: 15%; /* Roll column (just numbers) */
+}
+
+/* Header Styling */
+thead {
+  background-color: #1e40af; /* Deep blue header */
+}
+
+th {
+  color: #ffffff;
+  text-align: left;
+  font-weight: 600;
+  padding: 14px 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+/* Body and Row Styling */
+tbody tr {
+  border-bottom: 1px solid #e2e8f0; /* Subtle divider lines */
+  transition: background-color 0.2s ease;
+}
+
+/* Zebra Striping (Alternating rows) */
+tbody tr:nth-child(even) {
+  background-color: #f1f5f9; /* Soft blue-gray tint */
+}
+
+/* Hover Effect */
+tbody tr:hover {
+  background-color: #dbeafe; /* Light blue highlight on hover */
+}
+
+/* Cell Styling */
+td {
+  padding: 14px 16px;
+  color: #334155;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Optional: Bold the first column (Categories) to anchor the data */
+tbody tr td:first-child {
+  font-weight: 500;
+  color: #1e3a8a; /* Subtle deep blue for keys */
+}

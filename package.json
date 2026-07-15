@@ -1,25 +1,13 @@
 {
-  "name": "accidentalmahou",
-  "version": "1.0.0",
-  "description": "A single-page application (SPA) for generating random character builds based on the \"Accidental Magical Girl\" CYOA (Choose Your Own Adventure). Roll the dice and discover your magical girl destiny!",
-  "main": "script.js",
-  "scripts": {
-    "test": "vitest run"
+  "dependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tsx": "^4.23.1",
+    "webpack": "^5.108.4"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Mizu0025/Accidental-Magical-Girl-Build-Generator.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/Mizu0025/Accidental-Magical-Girl-Build-Generator/issues"
-  },
-  "homepage": "https://github.com/Mizu0025/Accidental-Magical-Girl-Build-Generator#readme",
   "devDependencies": {
-    "jsdom": "^27.3.0",
-    "vitest": "^4.0.16"
+    "vite": "^8.1.4"
   }
 }
