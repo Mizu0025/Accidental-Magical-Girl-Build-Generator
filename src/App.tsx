@@ -1,9 +1,9 @@
-import CharGen from './chargen/index.tsx';
+import Form from './form/index.tsx';
 
 function App() {
   return (
     <div>
-      <CharGen />
+      <Form />
     </div>
   );
 }

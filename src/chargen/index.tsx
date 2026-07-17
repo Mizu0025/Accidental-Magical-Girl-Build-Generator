@@ -28,37 +28,32 @@ const calculatePerks = (dice: number[]) => {
   }
 };
 
-const Chargen: React.FC<CharGenResults> = () => {
-  const diceResults: number[] = [];
-  for (let i = 0; i < 11; i++) {
-    diceResults.push(Math.floor(Math.random() * 20) + 1);
-  }
+type TableRowConfig = {
+  category: string;
+  result: string | number;
+  roll: string | number;
+};
 
-  const charAge: number = findCharAge(diceResults[0]);
-  const charBody: ElementByMaxRange = assertFound(findByMax(CharGenData.body, diceResults[1]), 'Missing body data for roll ' + diceResults[1]);
-  const charSpecialisation: ElementByIndividualRoll = assertFound(findSpecialisationRoll(diceResults[2]), 'Missing specialisation data for roll ' + diceResults[2]);
-  const charWeapon: ElementByMaxRange = assertFound(findByMax(CharGenData.weapon, diceResults[3]), 'Missing weapon data for roll ' + diceResults[3]);
-  const charOutfit: ElementByMaxRange = assertFound(findByMax(CharGenData.outfit, diceResults[4]), 'Missing outfit data for roll ' + diceResults[4]);
-  const charPower: ElementByMaxRange = assertFound(findByMax(CharGenData.power, diceResults[5]), 'Missing power data for roll ' + diceResults[5]);
-  const { charPerks, charFinalPerks } = calculatePerks(diceResults);
-
-  type TableRowConfig = {
-    category: string;
-    result: string | number;
-    roll: string | number;
-  };
+const generateCharacter = (diceRolls: number[]) => {
+  const charAge: number = findCharAge(diceRolls[0]);
+  const charBody: ElementByMaxRange = assertFound(findByMax(CharGenData.body, diceRolls[1]), 'Missing body data for roll ' + diceRolls[1]);
+  const charSpecialisation: ElementByIndividualRoll = assertFound(findSpecialisationRoll(diceRolls[2]), 'Missing specialisation data for roll ' + diceRolls[2]);
+  const charWeapon: ElementByMaxRange = assertFound(findByMax(CharGenData.weapon, diceRolls[3]), 'Missing weapon data for roll ' + diceRolls[3]);
+  const charOutfit: ElementByMaxRange = assertFound(findByMax(CharGenData.outfit, diceRolls[4]), 'Missing outfit data for roll ' + diceRolls[4]);
+  const charPower: ElementByMaxRange = assertFound(findByMax(CharGenData.power, diceRolls[5]), 'Missing power data for roll ' + diceRolls[5]);
+  const { charPerks, charFinalPerks } = calculatePerks(diceRolls);
 
   const tableRows: TableRowConfig[] = [
-    { category: 'Age', result: charAge, roll: diceResults[0] },
-    { category: 'Body', result: charBody?.name ?? '', roll: diceResults[1] },
-    { category: 'Specialisation', result: charSpecialisation?.name ?? '', roll: diceResults[2] },
-    { category: 'Weapon', result: charWeapon?.name ?? '', roll: diceResults[3] },
-    { category: 'Outfit', result: charOutfit?.name ?? '', roll: diceResults[4] },
-    { category: 'Power', result: charPower?.name ?? '', roll: diceResults[5] },
+    { category: 'Age', result: charAge, roll: diceRolls[0] },
+    { category: 'Body', result: charBody?.name ?? '', roll: diceRolls[1] },
+    { category: 'Specialisation', result: charSpecialisation?.name ?? '', roll: diceRolls[2] },
+    { category: 'Weapon', result: charWeapon?.name ?? '', roll: diceRolls[3] },
+    { category: 'Outfit', result: charOutfit?.name ?? '', roll: diceRolls[4] },
+    { category: 'Power', result: charPower?.name ?? '', roll: diceRolls[5] },
     {
       category: 'Perks',
       result: charPerks.map((p) => p?.name).filter(Boolean).join(', '),
-      roll: diceResults.slice(6, 10).join(', ')
+      roll: diceRolls.slice(6, 10).join(', ')
     },
     {
       category: 'Final Perks',
@@ -67,32 +62,38 @@ const Chargen: React.FC<CharGenResults> = () => {
         .filter(Boolean)
         .sort((a, b) => (a?.startsWith('Combat') ? -1 : 1))
         .join(' OR '),
-      roll: diceResults[10]
+      roll: diceRolls[10]
     },
   ];
 
+  return tableRows;
+};
+
+const CharacterResults = ({ diceRolls }: { diceRolls: number[] }) => {
+  const tableRows = generateCharacter(diceRolls);
+
   return (
-      <div>
-        <table>
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Result</th>
-              <th>Roll</th>
+    <div>
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Result</th>
+            <th>Roll</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tableRows.map(({ category, result, roll }) => (
+            <tr key={category}>
+              <td>{category}</td>
+              <td>{result}</td>
+              <td>{roll}</td>
             </tr>
-          </thead>
-          <tbody>
-            {tableRows.map(({ category, result, roll }) => (
-              <tr key={category}>
-                <td>{category}</td>
-                <td>{result}</td>
-                <td>{roll}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
-export default Chargen;
+export default CharacterResults;
