@@ -1,4 +1,6 @@
-export const data = {
+import { CharacterGeneration } from "../types/character";
+
+export const CharGenData: CharacterGeneration = {
     body: [
         { max: 6, name: "Underdeveloped", description: "Smaller, sickly, thin, or much younger looking.", bonus: "+1 LCK or MAG" },
         { max: 14, name: "Average", description: "Average for your age. No standout features.", bonus: "+1 AGI or VIT" },
@@ -96,24 +98,4 @@ export const data = {
             { roll: 20, name: "Fake Parents", description: "You have a pair of adults who are convinced they're your parents, with documentation proving it, and have just moved into town.", bonus: "" }
         ]
     }
-};
-
-export const originRules = {
-    'Contract': { gold: 1, silver: 3, bronze: 4, simple: { 'outfit': 0 } },
-    'Smug': { gold: 0, silver: 2, bronze: 3, allFree: true },
-    'Weapon': { gold: 1, silver: 3, bronze: 4, simple: { 'weapon': 0 }, bonusStat: 'Weapon' },
-    'Bloodline': { gold: 1, silver: 3, bronze: 4, simple: { 'specialization': 0 }, bonusStat: 'Specialisation' },
-    'Emergency': { gold: 1, silver: 3, bronze: 4, simple: { 'perk1': 0, 'perk2': 0 }, combatShiftFree: true },
-    'Artifact': { gold: 1, silver: 3, bronze: 4, extraArtifact: true },
-    'Death': { gold: 1, silver: 4, bronze: 4 }
-};
-
-export const originFields = {
-    'Contract': ['outfit-select'],
-    'Smug': ['age-select', 'body-select', 'spec-select', 'weapon-select', 'outfit-select', 'power-select', 'perk5-select'],
-    'Weapon': ['weapon-select'],
-    'Bloodline': ['spec-select'],
-    'Emergency': ['e-perk1-select', 'e-perk2-select'],
-    'Artifact': ['artifact-select'],
-    'Death': []
 };

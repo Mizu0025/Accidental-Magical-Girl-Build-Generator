@@ -1,36 +1,16 @@
-import { data } from '../constants/data';
+import { CharGenData } from '../constants/character';
+import { CharacterGeneration, ElementByIndividualRoll, ElementByMaxRange } from '../types/character';
 import './style.css';
 
-interface BaseElement {
-  name: string;
-  description: string;
-  bonus: string;
-}
-
-interface ElementByMaxRange extends BaseElement {
-  max: number;
-}
-
-interface ElementByIndividualRoll extends BaseElement {
-  roll: number;
-}
-
-interface CharGenState {
+interface CharGenResults extends CharacterGeneration {
   diceResults: number[];
-  charAge: number;
-  charBody: ElementByMaxRange;
-  charSpecialisation: ElementByIndividualRoll;
-  charWeapon: ElementByMaxRange;
-  charOutfit: ElementByMaxRange;
-  charPower: ElementByMaxRange;
-  charPerks: ElementByIndividualRoll[];
-  charFinalPerks: ElementByIndividualRoll[];
+  age: number;
 }
 
 const findCharAge = (roll: number) => 6 + roll + (roll > 10 ? -10 : 0);
 const findByMax = (arr: any[], roll: number) => arr.find((item) => roll <= item.max);
-const findSpecialisationRoll = (roll: number) => data.specialisation.find((specialisation) => specialisation.roll == roll);
-const findPerks = (category: 'combat' | 'support', roll: number) => data.perks[category].find(p => p.roll == roll);
+const findSpecialisationRoll = (roll: number) => CharGenData.specialisation.find((specialisation) => specialisation.roll == roll);
+const findPerks = (category: 'combat' | 'support', roll: number) => CharGenData.perks[category].find(p => p.roll == roll);
 const assertFound: <T, >(result: T | undefined, message: string) => T = <T,>(result: T | undefined, message: string) => { if (result === undefined) throw new Error(message); return result; };
 
 const calculatePerks = (dice: number[]) => {
@@ -48,18 +28,18 @@ const calculatePerks = (dice: number[]) => {
   }
 };
 
-const Chargen: React.FC<CharGenState> = () => {
+const Chargen: React.FC<CharGenResults> = () => {
   const diceResults: number[] = [];
   for (let i = 0; i < 11; i++) {
-      diceResults.push(Math.floor(Math.random() * 20) + 1);
+    diceResults.push(Math.floor(Math.random() * 20) + 1);
   }
 
   const charAge: number = findCharAge(diceResults[0]);
-  const charBody: ElementByMaxRange = assertFound(findByMax(data.body, diceResults[1]), 'Missing body data for roll ' + diceResults[1]);
+  const charBody: ElementByMaxRange = assertFound(findByMax(CharGenData.body, diceResults[1]), 'Missing body data for roll ' + diceResults[1]);
   const charSpecialisation: ElementByIndividualRoll = assertFound(findSpecialisationRoll(diceResults[2]), 'Missing specialisation data for roll ' + diceResults[2]);
-  const charWeapon: ElementByMaxRange = assertFound(findByMax(data.weapon, diceResults[3]), 'Missing weapon data for roll ' + diceResults[3]);
-  const charOutfit: ElementByMaxRange = assertFound(findByMax(data.outfit, diceResults[4]), 'Missing outfit data for roll ' + diceResults[4]);
-  const charPower: ElementByMaxRange = assertFound(findByMax(data.power, diceResults[5]), 'Missing power data for roll ' + diceResults[5]);
+  const charWeapon: ElementByMaxRange = assertFound(findByMax(CharGenData.weapon, diceResults[3]), 'Missing weapon data for roll ' + diceResults[3]);
+  const charOutfit: ElementByMaxRange = assertFound(findByMax(CharGenData.outfit, diceResults[4]), 'Missing outfit data for roll ' + diceResults[4]);
+  const charPower: ElementByMaxRange = assertFound(findByMax(CharGenData.power, diceResults[5]), 'Missing power data for roll ' + diceResults[5]);
   const { charPerks, charFinalPerks } = calculatePerks(diceResults);
 
   type TableRowConfig = {
