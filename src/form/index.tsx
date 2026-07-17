@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import CharacterResults from "../chargen";
+import "./style.css";
 
 const generateCharacterRolls = (): number[] => {
   const rolls: number[] = [];
@@ -18,9 +19,11 @@ const Form = () => {
   };
 
   return (
-    <div>
+    <div className="form-container">
       <h1>Select Origin</h1>
-      <button onClick={handleClick}>Generate Character</button>
+      <div className="button-wrapper">
+        <button onClick={handleClick}>Generate Character</button>
+      </div>
       {diceRolls.length > 0 && <CharacterResults diceRolls={diceRolls} />}
     </div>
   );
