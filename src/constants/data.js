@@ -39,16 +39,16 @@ export const data = {
         { max: 20, name: "Uniform", description: "School/military uniforms, business...", bonus: "+1 VIT" }
     ],
     power: [
-        { max: 2, name: "Killing Blow", description: "Overwhelming single attack.", notes: "+1 STR or MAG" },
-        { max: 4, name: "Hammerspace", description: "Extra-dimensional storage.", notes: "Stores non-living material." },
-        { max: 6, name: "Twinned Soul", description: "Splits soul into two bodies.", bonus: "-1 all stats", notes: "Share stats/perks. -1 all stats." },
-        { max: 8, name: "Focused Assault", description: "Punishing blows on single enemy.", notes: "Melee or Ranged form." },
-        { max: 10, name: "Barrage", description: "Rapid succession attacks.", notes: "Good vs hordes." },
-        { max: 12, name: "Power of Friendship", description: "Instinctive social skills.", notes: "Allies easily." },
-        { max: 14, name: "Duplication", description: "Create solid duplicates.", notes: "Can merge to relay XP." },
-        { max: 16, name: "Third Eye", description: "See magic flows.", notes: "Predict spells." },
-        { max: 18, name: "Regeneration", description: "Heal & recover fast.", notes: "Reattach limbs." },
-        { max: 20, name: "Tentacles", description: "Command tentacle-like appendages.", notes: "Simple minds." }
+        { max: 2, name: "Killing Blow", description: "Overwhelming single attack.", bonus: "+1 STR or MAG" },
+        { max: 4, name: "Hammerspace", description: "Extra-dimensional storage.", bonus: "" },
+        { max: 6, name: "Twinned Soul", description: "Splits soul into two bodies.", bonus: "-1 all stats" },
+        { max: 8, name: "Focused Assault", description: "Punishing blows on single enemy.", bonus: "" },
+        { max: 10, name: "Barrage", description: "Rapid succession attacks.", bonus: "" },
+        { max: 12, name: "Power of Friendship", description: "Instinctive social skills.", bonus: "" },
+        { max: 14, name: "Duplication", description: "Create solid duplicates.", bonus: "" },
+        { max: 16, name: "Third Eye", description: "See magic flows.", bonus: "" },
+        { max: 18, name: "Regeneration", description: "Heal & recover fast.", bonus: "" },
+        { max: 20, name: "Tentacles", description: "Command tentacle-like appendages.", bonus: "" }
     ],
     perks: {
         combat: [
