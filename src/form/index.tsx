@@ -1,7 +1,9 @@
 import { useState } from "react";
 import CharacterResults from "../chargen";
 import "./style.css";
-import Origin from "../origin";
+import MagicalCurrency from "../currency";
+import { OriginName } from "../types/origin";
+import Origin from '../origin';
 
 const generateCharacterRolls = (): number[] => {
   const rolls: number[] = [];
@@ -13,20 +15,20 @@ const generateCharacterRolls = (): number[] => {
 
 const Form = () => {
   const [diceRolls, setDiceRolls] = useState<number[]>([]);
+  const [selectedOrigin, setSelectedOrigin] = useState<OriginName>('Contract');
 
   const handleClick = () => {
     const newRolls = generateCharacterRolls();
     setDiceRolls(newRolls);
   };
-  // displayresults true while origin radio button clicked and dice rolls generated
   let displayResults = diceRolls.length > 0;
 
   return (
     <div className="form-container">
-      <h1>Select Origin</h1>
-      <Origin />
+      <MagicalCurrency origin={selectedOrigin} />
+      <Origin onSelect={setSelectedOrigin} />
       <div className="button-wrapper">
-        <button onClick={handleClick}>Generate Character</button>
+        <button onClick={handleClick} disabled={!selectedOrigin}>Generate Character</button>
       </div>
       {displayResults && <CharacterResults diceRolls={diceRolls} />}
     </div>
