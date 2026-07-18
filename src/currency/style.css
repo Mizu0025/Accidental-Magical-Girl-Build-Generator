@@ -1,8 +1,11 @@
 .currency-display {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  gap: 1.5rem;
   align-items: center;
   justify-content: center;
+  padding: 0.75rem 1.5rem;
+  background-color: #f8fafc;
 }
 
 .currency-display p:first-child {
@@ -14,5 +17,5 @@
 }
 
 .currency-display p:last-child {
-  color: bronze;
+  color: sandybrown;
 }

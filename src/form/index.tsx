@@ -15,7 +15,7 @@ const generateCharacterRolls = (): number[] => {
 
 const Form = () => {
   const [diceRolls, setDiceRolls] = useState<number[]>([]);
-  const [selectedOrigin, setSelectedOrigin] = useState<OriginName>('Contract');
+  const [selectedOrigin, setSelectedOrigin] = useState<OriginName>();
 
   const handleClick = () => {
     const newRolls = generateCharacterRolls();
@@ -25,7 +25,7 @@ const Form = () => {
 
   return (
     <div className="form-container">
-      <MagicalCurrency origin={selectedOrigin} />
+      {displayResults && !!selectedOrigin && <MagicalCurrency origin={selectedOrigin} />}
       <Origin onSelect={setSelectedOrigin} />
       <div className="button-wrapper">
         <button onClick={handleClick} disabled={!selectedOrigin}>Generate Character</button>
