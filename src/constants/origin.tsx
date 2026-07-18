@@ -45,18 +45,17 @@ export const OriginDescription: Record<Origin, string> = {
  not getting screwed by this, right?`,
   [Origin.Smug]: `Oh, you’re extra Smug. You might not be ideal but they’re more than willing to
   give you a little rope and watch what happens. But you're a smart and capable person.
-  You're gonna own this little puffball. You can't possibly get the short end of the stick`,
-  [Origin.Weapon]: `ns out that weapon you picked up recently isn’t as much as a display
+  You're gonna own this little puffball. You can't possibly get the short end of the stick.`,
+  [Origin.Weapon]: `Turns out that weapon you picked up recently isn’t as much as a display
   piece as you thought. It’s actually a magical weapon with a serious pedigree. Well, if
-  ou have this thing, you might as well put it to use fighting evil, right?`,
+  you have this thing, you might as well put it to use fighting evil, right?`,
   [Origin.Bloodline]: `You might not be aware, but you’re actually related to a powerful
   magical girl. Well, it might not be by actual blood, but reincarnation or something,
   but your powers are probably similar, and the little critter wants your type of powers.`,
   [Origin.Emergency]: `The local girl is dead, missing, or captured, there’s a monster or
   five on the prowl right now, and you’re the best they could find. What? There’s no
   time to haggle! The danger is here RIGHT NOW!`,
-  [Origin.Artifact]: `You bought, were gifted, or found a trinket recently. It didn't seem like ,
-  anything more than it looked like, but it turns out it's actually a magical artifact of some
+  [Origin.Artifact]: `You bought, were gifted, or found a trinket recently. It didn't seem like anything more than it looked like, but it turns out it's actually a magical artifact of some
   sort! It'll be pretty useful, but since you can't use it until you transform...`,
   [Origin.Death]: `You schmuck. The local magical girl is dead, and it’s all your goddamn
   fault. It’s your responsibility to take over, and even if you’re not an ideal candidate by

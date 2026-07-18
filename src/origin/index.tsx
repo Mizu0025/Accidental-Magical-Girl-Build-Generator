@@ -1,4 +1,5 @@
 import { Origin, OriginDescription } from '../constants/origin';
+import './style.css';
 
 const originData: Record<Origin, { label: string; description: string }> = {
   [Origin.Contract]: { label: 'Contract', description: OriginDescription.Contract },
@@ -12,12 +13,11 @@ const originData: Record<Origin, { label: string; description: string }> = {
 
 const GenerateOrigin = () => {
   return (
-    <div>
+    <div className="origin-buttons">
       {Object.entries(originData).map(([name, data]) => (
-        <div key={name}>
-          <input type="radio" id={name} name="origin" value={name} />
-          <label htmlFor={name}>{data.label}</label>
-          <p>{data.description}</p>
+        <div key={name} className="origin-item">
+          <input className="origin-radio" type="radio" id={name} name="origin" value={name} />
+          <label className="origin-button-label" htmlFor={name} data-tooltip={data.description}>{data.label}</label>
         </div>
       ))}
     </div>
