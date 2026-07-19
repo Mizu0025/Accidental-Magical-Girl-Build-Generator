@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Origin, OriginDescription } from "../constants/origin";
 import type { OriginName } from "../types/origin";
 import "./style.css";
@@ -24,6 +25,32 @@ const originData: Record<Origin, { label: string; description: string }> = {
 	[Origin.Death]: { label: "Death", description: OriginDescription.Death },
 };
 
+const TooltipButton = ({
+	htmlFor,
+	label,
+	content,
+}: {
+	htmlFor: string;
+	label: string;
+	content: string;
+}) => {
+	const [isHovered, setIsHovered] = useState(false);
+
+	return (
+		<div className="tooltip-wrapper">
+			<label
+				htmlFor={htmlFor}
+				className="origin-button-label"
+				onMouseEnter={() => setIsHovered(true)}
+				onMouseLeave={() => setIsHovered(false)}
+			>
+				{label}
+			</label>
+			{isHovered && <div className="tooltip-panel">{content}</div>}
+		</div>
+	);
+};
+
 const GenerateOrigin = ({
 	onSelect,
 }: {
@@ -41,13 +68,11 @@ const GenerateOrigin = ({
 						value={name}
 						onChange={() => onSelect(name as OriginName)}
 					/>
-					<label
-						className="origin-button-label"
+					<TooltipButton
 						htmlFor={name}
-						data-tooltip={data.description}
-					>
-						{data.label}
-					</label>
+						label={data.label}
+						content={data.description}
+					/>
 				</div>
 			))}
 		</div>
