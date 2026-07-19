@@ -25,12 +25,13 @@ const Form = () => {
 
 	return (
 		<div className="form-container">
+			{!displayResults && <h1>Create Your Character</h1>}
 			{displayResults && !!selectedOrigin && (
 				<MagicalCurrency origin={selectedOrigin} />
 			)}
 			<Origin onSelect={setSelectedOrigin} />
 			<div className="button-wrapper">
-				<button onClick={handleClick} disabled={!selectedOrigin}>
+				<button type="button" onClick={handleClick} disabled={!selectedOrigin}>
 					Generate Character
 				</button>
 			</div>

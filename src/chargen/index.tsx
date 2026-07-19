@@ -5,10 +5,20 @@ import type {
 } from "../types/character";
 import "./style.css";
 
+type ResultItem = {
+	id: string;
+	name: string;
+};
+
 type TableRowConfig = {
 	category: string;
-	result: string | number | string[];
+	result: string | number | ResultItem[];
 	roll: string | number;
+};
+
+type PerkElement = ElementByIndividualRoll & {
+	id: string;
+	isDuplicate: boolean;
 };
 
 const findCharAge = (roll: number) => 6 + roll + (roll > 10 ? -10 : 0);
@@ -28,7 +38,8 @@ const assertFound: <T>(result: T | undefined, message: string) => T = <T,>(
 	return result;
 };
 
-const calculatePerks = (dice: number[]) => {
+const calculatePerks: (dice: number[]) => PerkElement[] = (dice: number[]) => {
+	const seenRolls = new Set<number>();
 	return [
 		assertFound(
 			findPerks("combat", dice[6]),
@@ -54,7 +65,16 @@ const calculatePerks = (dice: number[]) => {
 			findPerks("support", dice[10]),
 			`Missing support perk for roll ${dice[10]}`,
 		),
-	];
+	].map((p, i) => {
+		const rollKey = i >= 4 ? dice[10] : dice[i + 6];
+		const isDuplicate = seenRolls.has(rollKey);
+		seenRolls.add(rollKey);
+		return {
+			...p,
+			id: `${p.name}-${i}`,
+			isDuplicate,
+		};
+	});
 };
 
 const generateCharacter = (diceRolls: number[]) => {
@@ -79,8 +99,7 @@ const generateCharacter = (diceRolls: number[]) => {
 		findByMax(CharGenData.power, diceRolls[5]),
 		`Missing power data for roll ${diceRolls[5]}`,
 	);
-	const charPerks = calculatePerks(diceRolls);
-
+	const charPerks: PerkElement[] = calculatePerks(diceRolls);
 	const tableRows: TableRowConfig[] = [
 		{ category: "Age", result: charAge, roll: diceRolls[0] },
 		{ category: "Body", result: charBody?.name ?? "", roll: diceRolls[1] },
@@ -94,12 +113,25 @@ const generateCharacter = (diceRolls: number[]) => {
 		{ category: "Power", result: charPower?.name ?? "", roll: diceRolls[5] },
 		{
 			category: "Perks",
-			result: charPerks.map((p) => p?.name).filter(Boolean),
+			result: charPerks.map((p) => ({ id: p.id, name: p.name })),
 			roll: diceRolls.slice(6, 11).join(", "),
 		},
 	];
 
 	return tableRows;
+};
+
+const renderCellContent = (result: string | number | ResultItem[]) => {
+	if (Array.isArray(result)) {
+		return (
+			<ul>
+				{result.map(({ id, name }) => (
+					<li key={id}>{name}</li>
+				))}
+			</ul>
+		);
+	}
+	return result;
 };
 
 const CharacterResults = ({ diceRolls }: { diceRolls: number[] }) => {
@@ -119,17 +151,7 @@ const CharacterResults = ({ diceRolls }: { diceRolls: number[] }) => {
 					{tableRows.map(({ category, result, roll }) => (
 						<tr key={category}>
 							<td>{category}</td>
-							<td>
-								{Array.isArray(result) ? (
-									<ul>
-										{result.map((item, i) => (
-											<li key={i}>{item}</li>
-										))}
-									</ul>
-								) : (
-									result
-								)}
-							</td>
+							<td>{renderCellContent(result)}</td>
 							<td>{roll}</td>
 						</tr>
 					))}
