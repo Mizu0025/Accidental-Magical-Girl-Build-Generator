@@ -1,87 +1,90 @@
 body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  margin: 0;
-  background-color: #f8fafc;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 100vh;
+	margin: 0;
+	background-color: #f8fafc;
+	font-family:
+		system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .table-container {
-  width: 100%;
-  max-width: 640px;
-  padding: 20px;
+	width: 100%;
+	max-width: 640px;
+	padding: 20px;
 }
 
 table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: #ffffff;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  table-layout: fixed;
+	width: 100%;
+	border-collapse: collapse;
+	background-color: #ffffff;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow:
+		0 4px 6px -1px rgba(0, 0, 0, 0.1),
+		0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	table-layout: fixed;
 }
 
 th:nth-child(1) {
-  width: 25%;
+	width: 25%;
 }
 
 th:nth-child(2) {
-  width: 60%;
+	width: 60%;
 }
 
 th:nth-child(3) {
-  width: 15%;
+	width: 15%;
 }
 
 thead {
-  background-color: #1e40af;
+	background-color: #1e40af;
 }
 
 th {
-  color: #ffffff;
-  text-align: left;
-  font-weight: 600;
-  padding: 14px 16px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  font-size: 0.85rem;
+	color: #ffffff;
+	text-align: left;
+	font-weight: 600;
+	padding: 14px 16px;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	font-size: 0.85rem;
 }
 
 tbody tr {
-  border-bottom: 1px solid #e2e8f0;
-  transition: background-color 0.2s ease;
-  min-height: 48px;
+	border-bottom: 1px solid #e2e8f0;
+	transition: background-color 0.2s ease;
+	min-height: 48px;
 }
 
 tbody tr:nth-child(even) {
-  background-color: #f1f5f9;
+	background-color: #f1f5f9;
 }
 
 tbody tr:hover {
-  background-color: #dbeafe;
+	background-color: #dbeafe;
 }
 
 td {
-  padding: 14px 16px;
-  color: #334155;
-  font-size: 0.95rem;
-  line-height: 1.5;
+	padding: 14px 16px;
+	color: #334155;
+	font-size: 0.95rem;
+	line-height: 1.5;
 }
 
 tbody tr td:first-child {
-  font-weight: 500;
-  color: #1e3a8a;
+	font-weight: 500;
+	color: #1e3a8a;
 }
 
 td ul {
-  margin: 0;
-  padding-left: 20px;
+	margin: 0;
+	padding-left: 20px;
 }
 
 td li {
-  color: #334155;
-  font-size: 0.95rem;
+	color: #334155;
+	font-size: 0.95rem;
 }

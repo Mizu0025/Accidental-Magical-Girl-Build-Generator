@@ -1,13 +1,12 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App'; // Importing our App component
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
 
-// Grab the 'root' div from index.html
-const rootElement = document.getElementById('root')!;
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("No root element found in index.html");
 
-// Tell React to take over that element and render our UI shell
 ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
-    <App /> {/* Look Ma, capital letters! */}
-  </React.StrictMode>
+	<React.StrictMode>
+		<App />
+	</React.StrictMode>,
 );
