@@ -1,7 +1,13 @@
+export interface Bonus {
+	stat: string;
+	value: number;
+	isChoice: boolean;
+}
+
 export interface BaseElement {
 	name: string;
 	description: string;
-	bonus: string;
+	bonus: Bonus[];
 }
 
 export interface ElementByMaxRange extends BaseElement {
