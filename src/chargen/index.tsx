@@ -1,127 +1,9 @@
-import { CharGenData } from "../constants/character";
-import type {
-	ElementByIndividualRoll,
-	ElementByMaxRange,
-} from "../types/character";
+import React, { useMemo } from "react";
+import type { RenderCellContentProps } from "../types/chargen";
+import { generateCharacter } from "./generateCharacter";
 import "./style.css";
 
-type ResultItem = {
-	id: string;
-	name: string;
-};
-
-type TableRowConfig = {
-	category: string;
-	result: string | number | ResultItem[];
-	roll: string | number;
-};
-
-type PerkElement = ElementByIndividualRoll & {
-	id: string;
-	isDuplicate: boolean;
-};
-
-const findCharAge = (roll: number) => 6 + roll + (roll > 10 ? -10 : 0);
-const findByMax = (arr: ElementByMaxRange[], roll: number) =>
-	arr.find((item) => roll <= item.max);
-const findSpecialisationRoll = (roll: number) =>
-	CharGenData.specialisation.find(
-		(specialisation) => specialisation.roll === roll,
-	);
-const findPerks = (category: "combat" | "support", roll: number) =>
-	CharGenData.perks[category].find((p) => p.roll === roll);
-const assertFound: <T>(result: T | undefined, message: string) => T = <T,>(
-	result: T | undefined,
-	message: string,
-) => {
-	if (result === undefined) throw new Error(message);
-	return result;
-};
-
-const calculatePerks: (dice: number[]) => PerkElement[] = (dice: number[]) => {
-	const seenRolls = new Set<number>();
-	return [
-		assertFound(
-			findPerks("combat", dice[6]),
-			`Missing combat perk for roll ${dice[6]}`,
-		),
-		assertFound(
-			findPerks("combat", dice[7]),
-			`Missing combat perk for roll ${dice[7]}`,
-		),
-		assertFound(
-			findPerks("support", dice[8]),
-			`Missing support perk for roll ${dice[8]}`,
-		),
-		assertFound(
-			findPerks("support", dice[9]),
-			`Missing support perk for roll ${dice[9]}`,
-		),
-		assertFound(
-			findPerks("combat", dice[10]),
-			`Missing combat perk for roll ${dice[10]}`,
-		),
-		assertFound(
-			findPerks("support", dice[10]),
-			`Missing support perk for roll ${dice[10]}`,
-		),
-	].map((p, i) => {
-		const rollKey = i >= 4 ? dice[10] : dice[i + 6];
-		const isDuplicate = seenRolls.has(rollKey);
-		seenRolls.add(rollKey);
-		return {
-			...p,
-			id: `${p.name}-${i}`,
-			isDuplicate,
-		};
-	});
-};
-
-const generateCharacter = (diceRolls: number[]) => {
-	const charAge: number = findCharAge(diceRolls[0]);
-	const charBody: ElementByMaxRange = assertFound(
-		findByMax(CharGenData.body, diceRolls[1]),
-		`Missing body data for roll ${diceRolls[1]}`,
-	);
-	const charSpecialisation: ElementByIndividualRoll = assertFound(
-		findSpecialisationRoll(diceRolls[2]),
-		`Missing specialisation data for roll ${diceRolls[2]}`,
-	);
-	const charWeapon: ElementByMaxRange = assertFound(
-		findByMax(CharGenData.weapon, diceRolls[3]),
-		`Missing weapon data for roll ${diceRolls[3]}`,
-	);
-	const charOutfit: ElementByMaxRange = assertFound(
-		findByMax(CharGenData.outfit, diceRolls[4]),
-		`Missing outfit data for roll ${diceRolls[4]}`,
-	);
-	const charPower: ElementByMaxRange = assertFound(
-		findByMax(CharGenData.power, diceRolls[5]),
-		`Missing power data for roll ${diceRolls[5]}`,
-	);
-	const charPerks: PerkElement[] = calculatePerks(diceRolls);
-	const tableRows: TableRowConfig[] = [
-		{ category: "Age", result: charAge, roll: diceRolls[0] },
-		{ category: "Body", result: charBody?.name ?? "", roll: diceRolls[1] },
-		{
-			category: "Specialisation",
-			result: charSpecialisation?.name ?? "",
-			roll: diceRolls[2],
-		},
-		{ category: "Weapon", result: charWeapon?.name ?? "", roll: diceRolls[3] },
-		{ category: "Outfit", result: charOutfit?.name ?? "", roll: diceRolls[4] },
-		{ category: "Power", result: charPower?.name ?? "", roll: diceRolls[5] },
-		{
-			category: "Perks",
-			result: charPerks.map((p) => ({ id: p.id, name: p.name })),
-			roll: diceRolls.slice(6, 11).join(", "),
-		},
-	];
-
-	return tableRows;
-};
-
-const renderCellContent = (result: string | number | ResultItem[]) => {
+const RenderCellContent = React.memo(({ result }: RenderCellContentProps) => {
 	if (Array.isArray(result)) {
 		return (
 			<ul>
@@ -131,11 +13,11 @@ const renderCellContent = (result: string | number | ResultItem[]) => {
 			</ul>
 		);
 	}
-	return result;
-};
+	return <>{result}</>;
+});
 
 const CharacterResults = ({ diceRolls }: { diceRolls: number[] }) => {
-	const tableRows = generateCharacter(diceRolls);
+	const tableRows = useMemo(() => generateCharacter(diceRolls), [diceRolls]);
 
 	return (
 		<div className="table-container">
@@ -151,7 +33,9 @@ const CharacterResults = ({ diceRolls }: { diceRolls: number[] }) => {
 					{tableRows.map(({ category, result, roll }) => (
 						<tr key={category}>
 							<td>{category}</td>
-							<td>{renderCellContent(result)}</td>
+							<td>
+								<RenderCellContent result={result} />
+							</td>
 							<td>{roll}</td>
 						</tr>
 					))}
