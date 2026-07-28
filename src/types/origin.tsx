@@ -1,3 +1,5 @@
+import type { Origin } from "../constants/origin";
+
 export interface OriginBenefits {
 	freeChoiceSelect: boolean;
 	weaponPickFree: boolean;
@@ -7,6 +9,11 @@ export interface OriginBenefits {
 	supportShiftFree: boolean;
 	extraArtifact: boolean;
 }
+
+export type OriginChoice = Record<
+	Origin,
+	{ label: string; description: string }
+>;
 
 export type OriginName =
 	| "Contract"
