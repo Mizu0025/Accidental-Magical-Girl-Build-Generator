@@ -1,4 +1,5 @@
 import type { CharacterBuild } from "../lib/dice";
+import { StatTable } from "./StatTable";
 
 interface BuildTableProps {
 	build: CharacterBuild;
@@ -20,14 +21,6 @@ export function BuildTable({ build }: BuildTableProps): React.JSX.Element {
 		result: `${build.bodyRoll.bodyType} (${build.bodyRoll.statBonusText})`,
 		roll: `${build.bodyRoll.rawRoll}`,
 	});
-
-	// Stats
-	const statsRows = build.stats.map((s) => ({
-		category: s.name,
-		result: `Total ${s.total} (base ${s.baseValue}, +${s.coinBonus} coin, +${s.bodyBonus} body)`,
-		roll: "—",
-	}));
-	rows.push(...statsRows);
 
 	// Specialization
 	rows.push({
@@ -60,41 +53,44 @@ export function BuildTable({ build }: BuildTableProps): React.JSX.Element {
 	// Perks
 	build.perkRolls.forEach((perk, i) => {
 		rows.push({
-			category: `Perk #${i + (perk.isFirstTwo ? 1 : perk.table === "Combat" ? 2 : 3)}`,
+			category: `Perk #${i + 1}`,
 			result: `${perk.table} — ${perk.perkName}`,
 			roll: `${perk.roll}`,
 		});
 	});
 
 	return (
-		<table className="w-full border-collapse mt-6">
-			<thead>
-				<tr className="bg-primary-600 text-white">
-					<th className="px-4 py-2 text-left" scope="col">
-						Category
-					</th>
-					<th className="px-4 py-2 text-left" scope="col">
-						Result/s
-					</th>
-					<th className="px-4 py-2 text-left" scope="col">
-						Roll Number
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				{rows.map((row) => (
-					<tr
-						key={row.category}
-						className={`border-b border-primary-200 ${
-							row.category === "Body" ? "bg-primary-50/30" : ""
-						}`}
-					>
-						<td className="px-4 py-2 font-medium">{row.category}</td>
-						<td className="px-4 py-2">{row.result}</td>
-						<td className="px-4 py-2">{row.roll}</td>
+		<div className="flex items-start mt-6">
+			<StatTable stats={build.stats} />
+			<table className="w-full border-collapse">
+				<thead>
+					<tr className="bg-primary-600 text-white">
+						<th className="px-4 py-2 text-left" scope="col">
+							Category
+						</th>
+						<th className="px-4 py-2 text-left" scope="col">
+							Result/s
+						</th>
+						<th className="px-4 py-2 text-left" scope="col">
+							Roll Number
+						</th>
 					</tr>
-				))}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{rows.map((row) => (
+						<tr
+							key={row.category}
+							className={`border-b border-primary-200 ${
+								row.category === "Body" ? "bg-primary-50/30" : ""
+							}`}
+						>
+							<td className="px-4 py-2 font-medium">{row.category}</td>
+							<td className="px-4 py-2">{row.result}</td>
+							<td className="px-4 py-2">{row.roll}</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
 	);
 }

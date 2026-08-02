@@ -84,11 +84,11 @@ const fakeBuild: CharacterBuild = {
 };
 
 describe("BuildTable", () => {
-	it("renders all category rows", () => {
+	it("renders all category rows in main table", () => {
 		render(<BuildTable build={fakeBuild} />);
-		// Expected categories: Age, Body, Stats, Specialization, Weapon, Outfit, Power, Perks
+		// Expected categories: Age, Body, Specialization, Weapon, Outfit, Power, Perks (Stats moved to StatTable)
 		const headers = screen.getAllByRole("columnheader");
-		expect(headers).toHaveLength(3); // Category | Result/s | Roll Number
+		expect(headers).toHaveLength(5); // StatTable(2) + main table(3)
 	});
 
 	it("displays age value correctly", () => {
@@ -108,5 +108,13 @@ describe("BuildTable", () => {
 		expect(screen.getByText("VIT")).toBeTruthy();
 		expect(screen.getByText("MAG")).toBeTruthy();
 		expect(screen.getByText("LCK")).toBeTruthy();
+	});
+});
+
+describe("StatTable", () => {
+	it("renders stat headers", () => {
+		render(<BuildTable build={fakeBuild} />);
+		expect(screen.getByText("Stat")).toBeTruthy();
+		expect(screen.getByText("Total")).toBeTruthy();
 	});
 });
