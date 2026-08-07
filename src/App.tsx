@@ -1,116 +1,90 @@
 import { useCallback, useState } from "react";
 import "./App.css";
 
-const CATEGORIES = [
-	"age",
-	"body",
-	"specialisation",
-	"weapon",
-	"outfit",
-	"power",
-] as const;
+import { resolveBody } from "./constants/body";
+import { resolveCombatPerk } from "./constants/combatPerks";
+import { resolveOutfit } from "./constants/outfit";
+import { resolvePower } from "./constants/power";
+import { resolveSpecialisation } from "./constants/specialisation";
+import { resolveSupportPerk } from "./constants/supportPerks";
+import { resolveWeapon } from "./constants/weapon";
 
-const PERKS = [
-	"keen sight",
-	"iron will",
-	"quick reflexes",
-	"lucky charm",
-	"vitality",
-] as const;
+type RollData = { id: string; category: string; result: string; roll: number };
 
-type RollData = { category: string; result: string; roll: number };
+function rollD20(): number {
+	return Math.floor(Math.random() * 20) + 1;
+}
 
-const resultsByCategory: Record<string, string[]> = {
-	age: [
-		"child",
-		"teen",
-		"young adult",
-		"adult",
-		"middle aged",
-		"senior",
-		"elder",
-	],
-	body: [
-		"slight",
-		"slender",
-		"average",
-		"athletic",
-		"muscular",
-		"stocky",
-		"heavy",
-		"massive",
-	],
-	specialisation: [
-		"warrior",
-		"mage",
-		"ranger",
-		"thief",
-		"cleric",
-		"bard",
-		"monk",
-		"paladin",
-		"druid",
-		"alchemist",
-		"rogue",
-	],
-	weapon: [
-		"sword",
-		"axe",
-		"mace",
-		"bow",
-		"dagger",
-		"staff",
-		"whip",
-		"spear",
-		"scythe",
-		"hammer",
-		"crossbow",
-	],
-	outfit: [
-		"rags",
-		"peasant clothes",
-		"adventurer's gear",
-		"leather armor",
-		"chainmail",
-		"plate armor",
-		"robe",
-		"cloak",
-		"uniform",
-		"ceremonial garb",
-		"traveler's outfit",
-	],
-	power: [
-		"fire",
-		"ice",
-		"lightning",
-		"earth",
-		"wind",
-		"water",
-		"light",
-		"dark",
-		"shadow",
-		"nature",
-		"mind",
-		"gravity",
-	],
-};
-
-function mapResult(category: string, roll: number): string {
-	const options = resultsByCategory[category];
-	if (!options) return String(roll);
-	return options[(roll - 1) % options.length];
+function computeAge(roll: number): number {
+	return 6 + (roll > 10 ? roll - 10 : roll);
 }
 
 function generateBuild(): RollData[] {
-	const rows: RollData[] = [];
-	for (const category of CATEGORIES) {
-		const roll = Math.floor(Math.random() * 20) + 1;
-		rows.push({ category, result: mapResult(category, roll), roll });
-	}
+	const rolls = Array.from({ length: 11 }, () => rollD20());
 
-	for (const perk of PERKS) {
-		const roll = Math.floor(Math.random() * 20) + 1;
-		rows.push({ category: "Perks", result: perk, roll });
+	const rows: RollData[] = [];
+	let id = 0;
+
+	rows.push({
+		id: String(id++),
+		category: "age",
+		result: String(computeAge(rolls[0])),
+		roll: rolls[0],
+	});
+	rows.push({
+		id: String(id++),
+		category: "body",
+		result: resolveBody(rolls[1]),
+		roll: rolls[1],
+	});
+	rows.push({
+		id: String(id++),
+		category: "specialisation",
+		result: resolveSpecialisation(rolls[2]),
+		roll: rolls[2],
+	});
+	rows.push({
+		id: String(id++),
+		category: "weapon",
+		result: resolveWeapon(rolls[3]),
+		roll: rolls[3],
+	});
+	rows.push({
+		id: String(id++),
+		category: "outfit",
+		result: resolveOutfit(rolls[4]),
+		roll: rolls[4],
+	});
+	rows.push({
+		id: String(id++),
+		category: "power",
+		result: resolvePower(rolls[5]),
+		roll: rolls[5],
+	});
+
+	const perkRolls = rolls.slice(6); // rolls[6..10], indices 0..4 for perks
+	const diceCount = new Map<number, number>(); // dice value -> occurrence count
+
+	for (let i = 0; i < perkRolls.length; i++) {
+		const roll = perkRolls[i];
+		const count = (diceCount.get(roll) ?? 0) + 1;
+		diceCount.set(roll, count);
+
+		let result: string;
+		if (count >= 3) {
+			result = "Free Pick";
+		} else if (i < 2) {
+			result = resolveCombatPerk(roll);
+		} else {
+			result = resolveSupportPerk(roll);
+		}
+
+		rows.push({
+			id: String(id++),
+			category: "perks",
+			result,
+			roll,
+		});
 	}
 
 	return rows;
@@ -128,9 +102,8 @@ function App() {
 			<button type="button" onClick={handleRoll}>
 				{rows ? "Reroll" : "Generate"}
 			</button>
-
 			{rows && (
-				<table>
+				<table data-testid="character-sheet">
 					<thead>
 						<tr>
 							<th>Category</th>
@@ -140,7 +113,7 @@ function App() {
 					</thead>
 					<tbody>
 						{rows.map((row) => (
-							<tr key={`${row.category}-${row.result}`}>
+							<tr key={row.id}>
 								<td>{row.category}</td>
 								<td>{row.result}</td>
 								<td>{row.roll}</td>

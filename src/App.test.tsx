@@ -1,33 +1,24 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import type { UserEvent } from "@testing-library/user-event";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
-const CATEGORIES = [
-	"age",
-	"body",
-	"specialisation",
-	"weapon",
-	"outfit",
-	"power",
-	"perks",
-] as const;
-
-const SINGLE_DIE_CATEGORIES = [
-	"age",
-	"body",
-	"specialisation",
-	"weapon",
-	"outfit",
-	"power",
-] as const;
+import { BODY_TYPES } from "./constants/body";
+import { CATEGORIES, SINGLE_DIE_CATEGORIES } from "./constants/categories";
+import { COMBAT_PERKS } from "./constants/combatPerks";
+import { OUTFIT_TYPES } from "./constants/outfit";
+import { POWERS } from "./constants/power";
+import { SPECIALISATIONS } from "./constants/specialisation";
+import { SUPPORT_PERKS } from "./constants/supportPerks";
+import { WEAPON_TYPES } from "./constants/weapon";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
 /** Extract all numeric roll tokens from a table's value cells. */
 function extractRolls(table: HTMLElement): number[] {
 	const rolls: number[] = [];
-	for (const row of table.querySelectorAll("tr")) {
+	for (const row of table.querySelectorAll<HTMLTableRowElement>("tr")) {
 		const valueCell = row.cells[2]?.textContent?.trim();
 		if (!valueCell) continue;
 		for (const token of valueCell.split(/[\s,]+/)) {
@@ -66,11 +57,13 @@ function mockDice(...values: number[]) {
  * as an array of { category, result, roll } parsed from cells.
  */
 async function generateAndGetData(
-	user: ReturnType<typeof userEvent.setup>,
+	user: UserEvent,
 ): Promise<{ category: string; result: string; roll: number }[]> {
 	await user.click(screen.getByRole("button", { name: /generate/i }));
-	const table = screen.getByRole("table");
-	const rows = Array.from(table.querySelectorAll("tbody tr"));
+	const table = screen.getByTestId("character-sheet");
+	const rows = Array.from(
+		table.querySelectorAll<HTMLTableRowElement>("tbody tr"),
+	);
 	return rows.map((row) => ({
 		category: row.cells[0]?.textContent?.trim().toLowerCase() ?? "",
 		result: row.cells[1]?.textContent?.trim() ?? "",
@@ -78,31 +71,48 @@ async function generateAndGetData(
 	}));
 }
 
+/** Compute the expected age number from a d20 roll. */
+function expectedAge(roll: number): number {
+	const effective = roll > 10 ? roll - 10 : roll;
+	return 6 + effective;
+}
+
+/** Find the name a given d20 roll maps to for a range-based category. */
+function rangeEntryName<
+	T extends { rollMin: number; rollMax: number; name: string },
+>(entries: readonly T[], roll: number): string {
+	return (
+		entries.find((e) => roll >= e.rollMin && roll <= e.rollMax)?.name ?? ""
+	);
+}
+
 // ── Tests ────────────────────────────────────────────────────────────
 
 describe("App", () => {
+	beforeEach(() => {
+		render(<App />);
+	});
+
 	afterEach(() => {
+		cleanup();
 		vi.restoreAllMocks();
 	});
 
 	it('shows a "Generate" button initially', () => {
-		render(<App />);
 		expect(screen.getByRole("button", { name: /generate/i })).toBeVisible();
 	});
 
 	it("changes button text to Reroll after first press", async () => {
-		render(<App />);
 		const user = userEvent.setup();
 		await user.click(screen.getByRole("button", { name: /generate/i }));
 		expect(screen.getByRole("button", { name: /reroll/i })).toBeVisible();
 	});
 
 	it("generates 11 d20 rolls and displays them in a table", async () => {
-		render(<App />);
 		const user = userEvent.setup();
 		await user.click(screen.getByRole("button", { name: /generate/i }));
-		const table = screen.getByRole("table");
-		const rows = table.querySelectorAll("tr");
+		const table = screen.getByTestId("character-sheet");
+		const rows = table.querySelectorAll<HTMLTableRowElement>("tr");
 		const categoryNames = Array.from(rows).map((row) =>
 			row.cells[0]?.textContent?.trim().toLowerCase(),
 		);
@@ -116,11 +126,10 @@ describe("App", () => {
 	});
 
 	it("maps each single-die category to exactly one roll", async () => {
-		render(<App />);
 		const user = userEvent.setup();
 		await user.click(screen.getByRole("button", { name: /generate/i }));
-		const table = screen.getByRole("table");
-		const rows = Array.from(table.querySelectorAll("tr"));
+		const table = screen.getByTestId("character-sheet");
+		const rows = Array.from(table.querySelectorAll<HTMLTableRowElement>("tr"));
 
 		for (const cat of SINGLE_DIE_CATEGORIES) {
 			const matchingRows = rows.filter((row) =>
@@ -138,11 +147,10 @@ describe("App", () => {
 	});
 
 	it("displays multiple dice in the perks category roll column", async () => {
-		render(<App />);
 		const user = userEvent.setup();
 		await user.click(screen.getByRole("button", { name: /generate/i }));
-		const table = screen.getByRole("table");
-		const rows = Array.from(table.querySelectorAll("tr"));
+		const table = screen.getByTestId("character-sheet");
+		const rows = Array.from(table.querySelectorAll<HTMLTableRowElement>("tr"));
 
 		const perksRows = rows.filter((row) =>
 			row.cells[0]?.textContent?.trim().toLowerCase().includes("perks"),
@@ -160,13 +168,12 @@ describe("App", () => {
 	});
 
 	it("generates a new set of rolls on reroll", async () => {
-		render(<App />);
 		const user = userEvent.setup();
 		await user.click(screen.getByRole("button", { name: /generate/i }));
-		const firstRolls = extractRolls(screen.getByRole("table"));
+		const firstRolls = extractRolls(screen.getByTestId("character-sheet"));
 
 		await user.click(screen.getByRole("button", { name: /reroll/i }));
-		const secondRolls = extractRolls(screen.getByRole("table"));
+		const secondRolls = extractRolls(screen.getByTestId("character-sheet"));
 
 		expect(secondRolls.length).toBe(11);
 		const same =
@@ -176,13 +183,11 @@ describe("App", () => {
 	});
 
 	it("renders 3 table columns (Category, Result, Roll) with build info", async () => {
-		render(<App />);
 		const user = userEvent.setup();
 		await user.click(screen.getByRole("button", { name: /generate/i }));
-		const table = screen.getByRole("table");
+		const table = screen.getByTestId("character-sheet");
+		const bodyRows = table.querySelectorAll<HTMLTableRowElement>("tbody tr");
 		const headerRow = table.querySelector("thead tr");
-		const bodyRows = table.querySelectorAll("tbody tr");
-
 		expect(headerRow).toBeTruthy();
 		if (!headerRow) return;
 		const headerCells = headerRow.querySelectorAll("th");
@@ -211,6 +216,7 @@ describe("App", () => {
 	describe("AGE rules (Roll 1)", () => {
 		it("computes age as 6 + roll for rolls 1-10", async () => {
 			for (const roll of [1, 5, 10]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -218,12 +224,12 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const ageRow = data.find((r) => r.category === "age");
 				expect(ageRow).toBeTruthy();
-				expect(ageRow?.result).toContain(String(6 + roll));
+				expect(ageRow?.result).toContain(String(expectedAge(roll)));
 			}
 		});
-
 		it("subtracts 10 for rolls 11-20 before adding 6", async () => {
 			for (const roll of [11, 15, 20]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -231,7 +237,7 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const ageRow = data.find((r) => r.category === "age");
 				expect(ageRow).toBeTruthy();
-				expect(ageRow?.result).toContain(String(6 + (roll - 10)));
+				expect(ageRow?.result).toContain(String(expectedAge(roll)));
 			}
 		});
 	});
@@ -239,6 +245,7 @@ describe("App", () => {
 	describe("BODY rules (Roll 2)", () => {
 		it("maps rolls 1-6 to Underdeveloped", async () => {
 			for (const roll of [1, 3, 6]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -246,12 +253,15 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const bodyRow = data.find((r) => r.category === "body");
 				expect(bodyRow).toBeTruthy();
-				expect(bodyRow?.result.toLowerCase()).toContain("underdeveloped");
+				expect(bodyRow?.result.toLowerCase()).toContain(
+					rangeEntryName(BODY_TYPES, roll).toLowerCase(),
+				);
 			}
 		});
 
 		it("maps rolls 7-14 to Average", async () => {
 			for (const roll of [7, 10, 14]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -259,12 +269,15 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const bodyRow = data.find((r) => r.category === "body");
 				expect(bodyRow).toBeTruthy();
-				expect(bodyRow?.result.toLowerCase()).toContain("average");
+				expect(bodyRow?.result.toLowerCase()).toContain(
+					rangeEntryName(BODY_TYPES, roll).toLowerCase(),
+				);
 			}
 		});
 
 		it("maps rolls 15-20 to Overdeveloped", async () => {
 			for (const roll of [15, 18, 20]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -272,38 +285,19 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const bodyRow = data.find((r) => r.category === "body");
 				expect(bodyRow).toBeTruthy();
-				expect(bodyRow?.result.toLowerCase()).toContain("overdeveloped");
+				expect(bodyRow?.result.toLowerCase()).toContain(
+					rangeEntryName(BODY_TYPES, roll).toLowerCase(),
+				);
 			}
 		});
 	});
 
 	describe("SPECIALIZATION rules (Roll 3)", () => {
-		const specMap: Record<number, string> = {
-			1: "fire",
-			2: "ice",
-			3: "air",
-			4: "spirit",
-			5: "reinforcement",
-			6: "psychic",
-			7: "time",
-			8: "lightning",
-			9: "sound",
-			10: "darkness",
-			11: "illusion",
-			12: "light",
-			13: "wood",
-			14: "empathic",
-			15: "water",
-			16: "gravity",
-			17: "stone",
-			18: "beast",
-			19: "metal",
-			20: "oddball",
-		};
-
 		it("maps each roll 1-20 to its unique specialization", async () => {
-			for (const [roll, expected] of Object.entries(specMap)) {
-				mockDice(Number(roll));
+			for (let roll = 1; roll <= 20; roll++) {
+				const expected = SPECIALISATIONS[roll - 1].name;
+				cleanup();
+				mockDice(roll);
 				render(<App />);
 
 				const user = userEvent.setup();
@@ -318,6 +312,7 @@ describe("App", () => {
 	describe("WEAPON rules (Roll 4)", () => {
 		it("maps rolls 1-5 to Melee", async () => {
 			for (const roll of [1, 3, 5]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -325,12 +320,15 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const weaponRow = data.find((r) => r.category === "weapon");
 				expect(weaponRow).toBeTruthy();
-				expect(weaponRow?.result.toLowerCase()).toContain("melee");
+				expect(weaponRow?.result.toLowerCase()).toContain(
+					rangeEntryName(WEAPON_TYPES, roll).toLowerCase(),
+				);
 			}
 		});
 
 		it("maps rolls 6-10 to Ranged", async () => {
 			for (const roll of [6, 8, 10]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -338,12 +336,15 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const weaponRow = data.find((r) => r.category === "weapon");
 				expect(weaponRow).toBeTruthy();
-				expect(weaponRow?.result.toLowerCase()).toContain("ranged");
+				expect(weaponRow?.result.toLowerCase()).toContain(
+					rangeEntryName(WEAPON_TYPES, roll).toLowerCase(),
+				);
 			}
 		});
 
 		it("maps rolls 11-15 to Mystic", async () => {
 			for (const roll of [11, 13, 15]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -351,12 +352,15 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const weaponRow = data.find((r) => r.category === "weapon");
 				expect(weaponRow).toBeTruthy();
-				expect(weaponRow?.result.toLowerCase()).toContain("mystic");
+				expect(weaponRow?.result.toLowerCase()).toContain(
+					rangeEntryName(WEAPON_TYPES, roll).toLowerCase(),
+				);
 			}
 		});
 
 		it("maps rolls 16-20 to Fist", async () => {
 			for (const roll of [16, 18, 20]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -364,7 +368,9 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const weaponRow = data.find((r) => r.category === "weapon");
 				expect(weaponRow).toBeTruthy();
-				expect(weaponRow?.result.toLowerCase()).toContain("fist");
+				expect(weaponRow?.result.toLowerCase()).toContain(
+					rangeEntryName(WEAPON_TYPES, roll).toLowerCase(),
+				);
 			}
 		});
 	});
@@ -372,6 +378,7 @@ describe("App", () => {
 	describe("OUTFIT rules (Roll 5)", () => {
 		it("maps rolls 1-5 to Skimpy", async () => {
 			for (const roll of [1, 3, 5]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -379,12 +386,15 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const outfitRow = data.find((r) => r.category === "outfit");
 				expect(outfitRow).toBeTruthy();
-				expect(outfitRow?.result.toLowerCase()).toContain("skimpy");
+				expect(outfitRow?.result.toLowerCase()).toContain(
+					rangeEntryName(OUTFIT_TYPES, roll).toLowerCase(),
+				);
 			}
 		});
 
 		it("maps rolls 6-10 to Flowing", async () => {
 			for (const roll of [6, 8, 10]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -392,12 +402,15 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const outfitRow = data.find((r) => r.category === "outfit");
 				expect(outfitRow).toBeTruthy();
-				expect(outfitRow?.result.toLowerCase()).toContain("flowing");
+				expect(outfitRow?.result.toLowerCase()).toContain(
+					rangeEntryName(OUTFIT_TYPES, roll).toLowerCase(),
+				);
 			}
 		});
 
 		it("maps rolls 11-15 to Elaborate", async () => {
 			for (const roll of [11, 13, 15]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -405,12 +418,15 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const outfitRow = data.find((r) => r.category === "outfit");
 				expect(outfitRow).toBeTruthy();
-				expect(outfitRow?.result.toLowerCase()).toContain("elaborate");
+				expect(outfitRow?.result.toLowerCase()).toContain(
+					rangeEntryName(OUTFIT_TYPES, roll).toLowerCase(),
+				);
 			}
 		});
 
 		it("maps rolls 16-20 to Uniform", async () => {
 			for (const roll of [16, 18, 20]) {
+				cleanup();
 				mockDice(roll);
 				render(<App />);
 
@@ -418,28 +434,18 @@ describe("App", () => {
 				const data = await generateAndGetData(user);
 				const outfitRow = data.find((r) => r.category === "outfit");
 				expect(outfitRow).toBeTruthy();
-				expect(outfitRow?.result.toLowerCase()).toContain("uniform");
+				expect(outfitRow?.result.toLowerCase()).toContain(
+					rangeEntryName(OUTFIT_TYPES, roll).toLowerCase(),
+				);
 			}
 		});
 	});
 
 	describe("POWER rules (Roll 6)", () => {
-		const powerMap: Record<string, number[]> = {
-			"killing blow": [1, 2],
-			hammerspace: [3, 4],
-			"twinned soul": [5, 6],
-			"focused assault": [7, 8],
-			barrage: [9, 10],
-			"power of friendship": [11, 12],
-			duplication: [13, 14],
-			"third eye": [15, 16],
-			regeneration: [17, 18],
-			tentacles: [19, 20],
-		};
-
 		it("maps each roll pair to its power", async () => {
-			for (const [power, rolls] of Object.entries(powerMap)) {
-				for (const roll of rolls) {
+			for (const power of POWERS) {
+				for (let roll = power.rollMin; roll <= power.rollMax; roll++) {
+					cleanup();
 					mockDice(roll);
 					render(<App />);
 
@@ -447,62 +453,20 @@ describe("App", () => {
 					const data = await generateAndGetData(user);
 					const powerRow = data.find((r) => r.category === "power");
 					expect(powerRow).toBeTruthy();
-					expect(powerRow?.result.toLowerCase()).toContain(power.toLowerCase());
+					expect(powerRow?.result.toLowerCase()).toContain(
+						power.name.toLowerCase(),
+					);
 				}
 			}
 		});
 	});
 
 	describe("PERKS rules (Rolls 7-11)", () => {
-		const combatPerks: Record<number, string> = {
-			1: "dual weapon",
-			2: "martial training",
-			3: "enhanced weapon",
-			4: "mystic artifact",
-			5: "gifted",
-			6: "flexibility",
-			7: "enhanced transformation",
-			8: "disguise artifact",
-			9: "blood magic",
-			10: "hammerspace handbag",
-			11: "enhanced sustenance",
-			12: "enhanced outfit",
-			13: "healing artifact",
-			14: "ally",
-			15: "monstrous metamorphosis",
-			16: "sorcery",
-			17: "wings",
-			18: "purification artifact",
-			19: "awareness",
-			20: "power artifact",
-		};
-
-		const supportPerks: Record<number, string> = {
-			1: "interdimensional tourist",
-			2: "closure",
-			3: "fated",
-			4: "training",
-			5: "interdimensional home",
-			6: "incognito",
-			7: "environmental sealing",
-			8: "get out of jail",
-			9: "big damn hero",
-			10: "absolute direction",
-			11: "big backpack",
-			12: "natural aging",
-			13: "masculinity",
-			14: "overcity shift",
-			15: "money",
-			16: "familiar",
-			17: "soul jar",
-			18: "eternal style",
-			19: "a way out",
-			20: "fake parents",
-		};
-
 		it("rolls 7-8 map to Combat table perks", async () => {
-			for (const [roll, expected] of Object.entries(combatPerks)) {
-				const diceValues = [1, 1, 1, 1, 1, 1, Number(roll)];
+			for (let roll = 1; roll <= 20; roll++) {
+				const expected = COMBAT_PERKS[roll - 1].name;
+				const diceValues = [1, 1, 1, 1, 1, 1, roll];
+				cleanup();
 				mockDice(...diceValues);
 				render(<App />);
 
@@ -517,8 +481,23 @@ describe("App", () => {
 		});
 
 		it("rolls 9-10 map to Support table perks", async () => {
-			for (const [roll, expected] of Object.entries(supportPerks)) {
-				const diceValues = [1, 1, 1, 1, 1, 1, 1, 1, Number(roll)];
+			for (let roll = 1; roll <= 20; roll++) {
+				const expected = SUPPORT_PERKS[roll - 1].name;
+				// Provide all 11 dice values — distinct perk dice to avoid free pick
+				const diceValues = [
+					1,
+					1,
+					1,
+					1,
+					1,
+					1, // rolls 0-5 (non-perk)
+					2,
+					3,
+					roll,
+					4,
+					5, // rolls 6-10 (perk: combat, combat, support, support, support)
+				];
+				cleanup();
 				mockDice(...diceValues);
 				render(<App />);
 
@@ -530,6 +509,135 @@ describe("App", () => {
 					expected.toLowerCase(),
 				);
 			}
+		});
+
+		it("does not show 'free pick' for only two duplicate dice", async () => {
+			// Two duplicates only — no free pick
+			const perkIdx = 5;
+			const diceValues = [1, 1, 1, 1, 1, 1, perkIdx, perkIdx, 1, 2, 3];
+			cleanup();
+			mockDice(...diceValues);
+			render(<App />);
+
+			const user = userEvent.setup();
+			const data = await generateAndGetData(user);
+			const perksRows = data.filter((r) => r.category === "perks");
+
+			const results = perksRows.map((r) => r.result.toLowerCase());
+			const hasFreePick = results.some((r) => r.includes("free pick"));
+			expect(hasFreePick).toBe(false);
+		});
+
+		it("shows 'free pick' only on third duplicate dice value", async () => {
+			// Three same dice values — third perk should be 'free pick'
+			const perkIdx = 7;
+			const diceValues = [1, 1, 1, 1, 1, 1, perkIdx, perkIdx, perkIdx, 2, 3];
+			cleanup();
+			mockDice(...diceValues);
+			render(<App />);
+
+			const user = userEvent.setup();
+			const data = await generateAndGetData(user);
+			const perksRows = data.filter((r) => r.category === "perks");
+
+			expect(perksRows.length).toBe(5);
+			// First two keep their perk name
+			const expectedCombat = COMBAT_PERKS[perkIdx - 1].name.toLowerCase();
+			expect(perksRows[0].result.toLowerCase()).toContain(expectedCombat);
+			expect(perksRows[1].result.toLowerCase()).toContain(expectedCombat);
+			// Third becomes free pick
+			expect(perksRows[2].result.toLowerCase()).toContain("free pick");
+			// Remaining perks are unaffected
+			expect(perksRows[3].result.toLowerCase()).not.toContain("free pick");
+			expect(perksRows[4].result.toLowerCase()).not.toContain("free pick");
+		});
+
+		it("shows 'free pick' on third and fourth when four duplicates", async () => {
+			const perkIdx = 3;
+			const diceValues = [
+				1,
+				1,
+				1,
+				1,
+				1,
+				1,
+				perkIdx,
+				perkIdx,
+				perkIdx,
+				perkIdx,
+				5,
+			];
+			cleanup();
+			mockDice(...diceValues);
+			render(<App />);
+
+			const user = userEvent.setup();
+			const data = await generateAndGetData(user);
+			const perksRows = data.filter((r) => r.category === "perks");
+
+			expect(perksRows.length).toBe(5);
+			// First two keep their perk name
+			expect(perksRows[0].result.toLowerCase()).not.toContain("free pick");
+			expect(perksRows[1].result.toLowerCase()).not.toContain("free pick");
+			// Third and fourth become free pick
+			expect(perksRows[2].result.toLowerCase()).toContain("free pick");
+			expect(perksRows[3].result.toLowerCase()).toContain("free pick");
+			// Fifth is unaffected
+			expect(perksRows[4].result.toLowerCase()).not.toContain("free pick");
+		});
+
+		it("shows 'free pick' on 3rd-5th when all five perks roll same value", async () => {
+			const perkIdx = 1;
+			const diceValues = [
+				1,
+				1,
+				1,
+				1,
+				1,
+				1,
+				perkIdx,
+				perkIdx,
+				perkIdx,
+				perkIdx,
+				perkIdx,
+			];
+			cleanup();
+			mockDice(...diceValues);
+			render(<App />);
+
+			const user = userEvent.setup();
+			const data = await generateAndGetData(user);
+			const perksRows = data.filter((r) => r.category === "perks");
+
+			expect(perksRows.length).toBe(5);
+			expect(perksRows[0].result.toLowerCase()).not.toContain("free pick");
+			expect(perksRows[1].result.toLowerCase()).not.toContain("free pick");
+			expect(perksRows[2].result.toLowerCase()).toContain("free pick");
+			expect(perksRows[3].result.toLowerCase()).toContain("free pick");
+			expect(perksRows[4].result.toLowerCase()).toContain("free pick");
+		});
+
+		it("handles two separate duplicate groups independently", async () => {
+			// Rolls 7,8,9 = 2 (three duplicates → free pick at 9)
+			// Rolls 10,11 = 5 (two duplicates → no free pick)
+			const diceValues = [1, 1, 1, 1, 1, 1, 2, 2, 2, 5, 5];
+			cleanup();
+			mockDice(...diceValues);
+			render(<App />);
+
+			const user = userEvent.setup();
+			const data = await generateAndGetData(user);
+			const perksRows = data.filter((r) => r.category === "perks");
+
+			expect(perksRows.length).toBe(5);
+			// First two 2s keep their perk
+			expect(perksRows[0].result.toLowerCase()).not.toContain("free pick");
+			expect(perksRows[1].result.toLowerCase()).not.toContain("free pick");
+			// Third 2 becomes free pick
+			expect(perksRows[2].result.toLowerCase()).toContain("free pick");
+			// The two 5s don't trigger free pick (only two occurrences)
+			expect(perksRows[3].result.toLowerCase()).not.toContain("free pick");
+			expect(perksRows[4].result.toLowerCase()).not.toContain("free pick");
 		});
 	});
 });
