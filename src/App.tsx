@@ -63,26 +63,44 @@ function generateBuild(): RollData[] {
 	});
 
 	const perkRolls = rolls.slice(6); // rolls[6..10], indices 0..4 for perks
-	const diceCount = new Map<number, number>(); // dice value -> occurrence count
+	const givenPerks = new Set<string>();
 
 	for (let i = 0; i < perkRolls.length; i++) {
 		const roll = perkRolls[i];
-		const count = (diceCount.get(roll) ?? 0) + 1;
-		diceCount.set(roll, count);
+		const isCombatSlot = i < 2;
+
+		const normalPerk = isCombatSlot
+			? resolveCombatPerk(roll)
+			: resolveSupportPerk(roll);
+		const oppositePerk = isCombatSlot
+			? resolveSupportPerk(roll)
+			: resolveCombatPerk(roll);
 
 		let result: string;
-		if (count >= 3) {
+		let table: string;
+
+		if (normalPerk && !givenPerks.has(normalPerk)) {
+			result = normalPerk;
+			table = isCombatSlot ? "Combat" : "Support";
+			givenPerks.add(normalPerk);
+		} else if (oppositePerk && !givenPerks.has(oppositePerk)) {
+			result = oppositePerk;
+			table = isCombatSlot ? "Support" : "Combat";
+			givenPerks.add(oppositePerk);
+		} else if (normalPerk) {
+			// Normal perk is taken; opposite unavailable
 			result = "Free Pick";
-		} else if (i < 2) {
-			result = resolveCombatPerk(roll);
+			table = "";
 		} else {
-			result = resolveSupportPerk(roll);
+			// Both tables have no perk for this roll
+			result = "Free Pick";
+			table = "";
 		}
 
 		rows.push({
 			id: String(id++),
 			category: "perks",
-			result,
+			result: table ? `${result} [${table}]` : result,
 			roll,
 		});
 	}

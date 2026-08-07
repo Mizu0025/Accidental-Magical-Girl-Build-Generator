@@ -33,6 +33,6 @@ export const COMBAT_PERKS: PerkEntry[] = [
 /** Resolve the combat perk name for a given d20 roll. */
 export function resolveCombatPerk(roll: number): string {
 	const idx = roll - 1;
-	if (idx < 0 || idx >= COMBAT_PERKS.length) return "Power Artifact";
+	if (idx < 0 || idx >= COMBAT_PERKS.length) return "";
 	return COMBAT_PERKS[idx].name;
 }

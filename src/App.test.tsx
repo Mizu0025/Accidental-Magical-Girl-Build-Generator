@@ -465,7 +465,8 @@ describe("App", () => {
 		it("rolls 7-8 map to Combat table perks", async () => {
 			for (let roll = 1; roll <= 20; roll++) {
 				const expected = COMBAT_PERKS[roll - 1].name;
-				const diceValues = [1, 1, 1, 1, 1, 1, roll];
+				// Use 99 for non-perk dice to avoid collisions with roll values 1-20
+				const diceValues = [99, 99, 99, 99, 99, 99, roll];
 				cleanup();
 				mockDice(...diceValues);
 				render(<App />);
@@ -483,19 +484,19 @@ describe("App", () => {
 		it("rolls 9-10 map to Support table perks", async () => {
 			for (let roll = 1; roll <= 20; roll++) {
 				const expected = SUPPORT_PERKS[roll - 1].name;
-				// Provide all 11 dice values — distinct perk dice to avoid free pick
+				// Use 99 for non-tested perk dice to avoid collisions
 				const diceValues = [
-					1,
-					1,
-					1,
-					1,
-					1,
-					1, // rolls 0-5 (non-perk)
-					2,
-					3,
+					99,
+					99,
+					99,
+					99,
+					99,
+					99, // rolls 0-5 (non-perk)
+					99,
+					99,
 					roll,
-					4,
-					5, // rolls 6-10 (perk: combat, combat, support, support, support)
+					99,
+					99, // rolls 6-10 (perk: only slot 2 tested)
 				];
 				cleanup();
 				mockDice(...diceValues);
@@ -512,7 +513,7 @@ describe("App", () => {
 		});
 
 		it("does not show 'free pick' for only two duplicate dice", async () => {
-			// Two duplicates only — no free pick
+			// Two duplicates — second should shift to opposite table, no free pick
 			const perkIdx = 5;
 			const diceValues = [1, 1, 1, 1, 1, 1, perkIdx, perkIdx, 1, 2, 3];
 			cleanup();
@@ -523,13 +524,22 @@ describe("App", () => {
 			const data = await generateAndGetData(user);
 			const perksRows = data.filter((r) => r.category === "perks");
 
+			// First perk from combat table
+			const expectedCombat =
+				COMBAT_PERKS[perkIdx - 1].name.toLowerCase();
+			expect(perksRows[0].result.toLowerCase()).toContain(expectedCombat);
+			// Second duplicate shifts to support table
+			const expectedSupport =
+				SUPPORT_PERKS[perkIdx - 1].name.toLowerCase();
+			expect(perksRows[1].result.toLowerCase()).toContain(expectedSupport);
+			// No free pick
 			const results = perksRows.map((r) => r.result.toLowerCase());
 			const hasFreePick = results.some((r) => r.includes("free pick"));
 			expect(hasFreePick).toBe(false);
 		});
 
 		it("shows 'free pick' only on third duplicate dice value", async () => {
-			// Three same dice values — third perk should be 'free pick'
+			// Three same dice values — second shifts to opposite table, third is 'free pick'
 			const perkIdx = 7;
 			const diceValues = [1, 1, 1, 1, 1, 1, perkIdx, perkIdx, perkIdx, 2, 3];
 			cleanup();
@@ -541,10 +551,14 @@ describe("App", () => {
 			const perksRows = data.filter((r) => r.category === "perks");
 
 			expect(perksRows.length).toBe(5);
-			// First two keep their perk name
-			const expectedCombat = COMBAT_PERKS[perkIdx - 1].name.toLowerCase();
+			// First from combat table
+			const expectedCombat =
+				COMBAT_PERKS[perkIdx - 1].name.toLowerCase();
 			expect(perksRows[0].result.toLowerCase()).toContain(expectedCombat);
-			expect(perksRows[1].result.toLowerCase()).toContain(expectedCombat);
+			// Second duplicate shifts to support table
+			const expectedSupport =
+				SUPPORT_PERKS[perkIdx - 1].name.toLowerCase();
+			expect(perksRows[1].result.toLowerCase()).toContain(expectedSupport);
 			// Third becomes free pick
 			expect(perksRows[2].result.toLowerCase()).toContain("free pick");
 			// Remaining perks are unaffected
@@ -576,9 +590,14 @@ describe("App", () => {
 			const perksRows = data.filter((r) => r.category === "perks");
 
 			expect(perksRows.length).toBe(5);
-			// First two keep their perk name
-			expect(perksRows[0].result.toLowerCase()).not.toContain("free pick");
-			expect(perksRows[1].result.toLowerCase()).not.toContain("free pick");
+			// First from combat table
+			const expectedCombat =
+				COMBAT_PERKS[perkIdx - 1].name.toLowerCase();
+			expect(perksRows[0].result.toLowerCase()).toContain(expectedCombat);
+			// Second duplicate shifts to support table
+			const expectedSupport =
+				SUPPORT_PERKS[perkIdx - 1].name.toLowerCase();
+			expect(perksRows[1].result.toLowerCase()).toContain(expectedSupport);
 			// Third and fourth become free pick
 			expect(perksRows[2].result.toLowerCase()).toContain("free pick");
 			expect(perksRows[3].result.toLowerCase()).toContain("free pick");
@@ -610,16 +629,23 @@ describe("App", () => {
 			const perksRows = data.filter((r) => r.category === "perks");
 
 			expect(perksRows.length).toBe(5);
-			expect(perksRows[0].result.toLowerCase()).not.toContain("free pick");
-			expect(perksRows[1].result.toLowerCase()).not.toContain("free pick");
+			// First from combat table
+			const expectedCombat =
+				COMBAT_PERKS[perkIdx - 1].name.toLowerCase();
+			expect(perksRows[0].result.toLowerCase()).toContain(expectedCombat);
+			// Second duplicate shifts to support table
+			const expectedSupport =
+				SUPPORT_PERKS[perkIdx - 1].name.toLowerCase();
+			expect(perksRows[1].result.toLowerCase()).toContain(expectedSupport);
+			// Third through fifth become free pick
 			expect(perksRows[2].result.toLowerCase()).toContain("free pick");
 			expect(perksRows[3].result.toLowerCase()).toContain("free pick");
 			expect(perksRows[4].result.toLowerCase()).toContain("free pick");
 		});
 
 		it("handles two separate duplicate groups independently", async () => {
-			// Rolls 7,8,9 = 2 (three duplicates → free pick at 9)
-			// Rolls 10,11 = 5 (two duplicates → no free pick)
+			// Rolls 7,8,9 = 2 (three duplicates → support shift at 8, free pick at 9)
+			// Rolls 10,11 = 5 (two duplicates → combat shift at 11)
 			const diceValues = [1, 1, 1, 1, 1, 1, 2, 2, 2, 5, 5];
 			cleanup();
 			mockDice(...diceValues);
@@ -630,14 +656,24 @@ describe("App", () => {
 			const perksRows = data.filter((r) => r.category === "perks");
 
 			expect(perksRows.length).toBe(5);
-			// First two 2s keep their perk
-			expect(perksRows[0].result.toLowerCase()).not.toContain("free pick");
-			expect(perksRows[1].result.toLowerCase()).not.toContain("free pick");
+			// First 2 from combat table
+			expect(perksRows[0].result.toLowerCase()).toContain(
+				COMBAT_PERKS[1].name.toLowerCase(),
+			);
+			// Second 2 shifts to support table
+			expect(perksRows[1].result.toLowerCase()).toContain(
+				SUPPORT_PERKS[1].name.toLowerCase(),
+			);
 			// Third 2 becomes free pick
 			expect(perksRows[2].result.toLowerCase()).toContain("free pick");
-			// The two 5s don't trigger free pick (only two occurrences)
-			expect(perksRows[3].result.toLowerCase()).not.toContain("free pick");
-			expect(perksRows[4].result.toLowerCase()).not.toContain("free pick");
+			// First 5 from support table
+			expect(perksRows[3].result.toLowerCase()).toContain(
+				SUPPORT_PERKS[4].name.toLowerCase(),
+			);
+			// Second 5 shifts to combat table
+			expect(perksRows[4].result.toLowerCase()).toContain(
+				COMBAT_PERKS[4].name.toLowerCase(),
+			);
 		});
 	});
 });

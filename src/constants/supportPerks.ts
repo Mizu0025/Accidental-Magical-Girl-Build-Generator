@@ -33,6 +33,6 @@ export const SUPPORT_PERKS: PerkEntry[] = [
 /** Resolve the support perk name for a given d20 roll. */
 export function resolveSupportPerk(roll: number): string {
 	const idx = roll - 1;
-	if (idx < 0 || idx >= SUPPORT_PERKS.length) return "Fake Parents";
+	if (idx < 0 || idx >= SUPPORT_PERKS.length) return "";
 	return SUPPORT_PERKS[idx].name;
 }
